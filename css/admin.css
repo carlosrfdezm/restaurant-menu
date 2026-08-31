@@ -1,23 +1,16 @@
-/* Variables admin */
-:root {
-    --admin-primary: #2c3e50;
-    --admin-secondary: #34495e;
-    --admin-accent: #3498db;
-}
-
-/* Login */
+/* Estilos adicionales para admin */
 .login-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+    background: linear-gradient(135deg, #2c3e50, #34495e);
     padding: 1rem;
 }
 
 .login-box {
     background: white;
-    padding: 3rem;
+    padding: 2.5rem;
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     width: 100%;
@@ -26,18 +19,72 @@
 
 .login-box h1 {
     text-align: center;
-    margin-bottom: 2rem;
-    color: var(--admin-primary);
+    margin-bottom: 1rem;
+    color: #2c3e50;
 }
 
-/* Admin Nav */
-.admin-nav {
-    background: var(--admin-primary);
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.7rem;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.btn-primary {
+    background: #3498db;
     color: white;
-    padding: 1rem 2rem;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Navbar */
+.admin-nav {
+    background: #2c3e50;
+    color: white;
+    padding: 0.8rem 2rem;
     position: sticky;
     top: 0;
     z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .nav-content {
@@ -48,20 +95,27 @@
     align-items: center;
 }
 
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .nav-content h2 {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
+    margin: 0;
 }
 
 .nav-actions {
     display: flex;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 /* Admin Content */
 .admin-content {
     max-width: 1400px;
-    margin: 2rem auto;
-    padding: 0 2rem;
+    margin: 0 auto;
+    padding: 1.5rem 2rem;
 }
 
 .admin-section {
@@ -69,7 +123,7 @@
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 2rem;
-    box-shadow: var(--card-shadow);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
 .section-header {
@@ -81,125 +135,94 @@
     gap: 1rem;
 }
 
+.section-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .admin-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1rem;
 }
 
 .admin-card {
-    background: var(--background);
+    background: #f8f9fa;
     border-radius: 8px;
     padding: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: var(--transition);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
 }
 
 .admin-card:hover {
     transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.admin-card-actions {
+.card-info {
     display: flex;
-    gap: 0.5rem;
-}
-
-.admin-card-actions button {
-    padding: 0.3rem 0.6rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.btn-edit {
-    background: var(--admin-accent);
-    color: white;
-}
-
-.btn-delete {
-    background: var(--primary);
-    color: white;
-}
-
-.btn-edit:hover, .btn-delete:hover {
-    opacity: 0.8;
-}
-
-/* Orders */
-.orders-list {
-    display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 0.8rem;
 }
 
-.order-card {
-    background: var(--background);
-    border-radius: 8px;
-    padding: 1rem;
+.card-icon {
+    font-size: 1.5rem;
+    color: #3498db;
+    width: 40px;
+    text-align: center;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.card-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.card-status {
+    font-size: 0.8rem;
+    margin-top: 0.2rem;
+}
+
+.card-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
     gap: 0.5rem;
 }
 
-.order-status {
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: bold;
-}
-
-.status-pending {
-    background: var(--warning);
+.btn-edit {
+    padding: 0.3rem 0.6rem;
+    background: #3498db;
     color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.status-preparing {
-    background: var(--admin-accent);
+.btn-edit:hover {
+    background: #2980b9;
+}
+
+.btn-delete {
+    padding: 0.3rem 0.6rem;
+    background: #e74c3c;
     color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.status-ready {
-    background: var(--success);
-    color: white;
-}
-
-.status-delivered {
-    background: #95a5a6;
-    color: white;
-}
-
-/* Formularios */
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.3rem;
-    font-weight: 500;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 0.7rem;
-    border: 2px solid #ddd;
-    border-radius: 6px;
-    font-size: 1rem;
-    transition: var(--transition);
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: var(--admin-accent);
+.btn-delete:hover {
+    background: #c0392b;
 }
 
 /* Modales */
@@ -214,6 +237,7 @@
     z-index: 1000;
     justify-content: center;
     align-items: center;
+    padding: 1rem;
 }
 
 .modal.active {
@@ -225,10 +249,26 @@
     border-radius: 16px;
     padding: 2rem;
     max-width: 600px;
-    width: 90%;
+    width: 100%;
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
+    animation: modalSlideIn 0.3s ease;
+}
+
+.modal-order {
+    max-width: 700px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .modal-close {
@@ -238,55 +278,25 @@
     font-size: 2rem;
     cursor: pointer;
     color: #999;
+    transition: all 0.3s ease;
 }
 
-/* Botones */
-.btn-primary {
-    background: var(--admin-accent);
-    color: white;
-    border: none;
-    padding: 0.7rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: var(--transition);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(52,152,219,0.3);
-}
-
-.btn-secondary {
-    background: transparent;
-    color: white;
-    border: 2px solid white;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.btn-secondary:hover {
-    background: white;
-    color: var(--admin-primary);
+.modal-close:hover {
+    color: #2c3e50;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .admin-grid {
-        grid-template-columns: 1fr;
+    .admin-nav {
+        padding: 0.5rem 1rem;
     }
     
     .admin-content {
-        padding: 0 1rem;
+        padding: 1rem;
     }
     
-    .admin-nav {
-        padding: 1rem;
+    .admin-grid {
+        grid-template-columns: 1fr;
     }
     
     .nav-content {
@@ -294,7 +304,12 @@
         gap: 0.5rem;
     }
     
+    .section-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
     .login-box {
-        padding: 2rem;
+        padding: 1.5rem;
     }
 }

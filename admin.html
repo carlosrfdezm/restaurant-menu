@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Dashboard</title>
+    <title>Panel de Administración</title>
     <link rel="stylesheet" href="css/admin.css">
-    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
@@ -13,58 +12,84 @@
         <!-- Login -->
         <div id="loginSection" class="login-container">
             <div class="login-box">
-                <h1>🔐 Admin Panel</h1>
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <i class="fas fa-utensils" style="font-size: 3rem; color: #e74c3c;"></i>
+                    <h1 style="margin-top: 0.5rem;">Panel Admin</h1>
+                    <p style="color: #666;">Gestión de pedidos y menú</p>
+                </div>
                 <form id="loginForm">
                     <div class="form-group">
-                        <input type="email" id="adminEmail" placeholder="Email" required>
+                        <label>Email</label>
+                        <input type="email" id="adminEmail" placeholder="admin@restaurant.com" required>
                     </div>
                     <div class="form-group">
-                        <input type="password" id="adminPassword" placeholder="Contraseña" required>
+                        <label>Contraseña</label>
+                        <input type="password" id="adminPassword" placeholder="••••••••" required>
                     </div>
-                    <button type="submit" class="btn-primary">Iniciar Sesión</button>
+                    <button type="submit" class="btn-primary" style="width: 100%;">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
                 </form>
             </div>
         </div>
 
         <!-- Dashboard -->
         <div id="dashboardSection" style="display:none;">
+            <!-- Navbar -->
             <nav class="admin-nav">
                 <div class="nav-content">
-                    <h2>📊 Dashboard</h2>
+                    <div class="nav-left">
+                        <h2><i class="fas fa-utensils"></i> Admin Panel</h2>
+                        <span class="nav-badge" id="pendingBadge">0</span>
+                    </div>
                     <div class="nav-actions">
-                        <button id="logoutBtn" class="btn-secondary">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                        <button class="btn-nav" id="refreshBtn" title="Actualizar">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                        <button class="btn-nav btn-logout" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
                         </button>
                     </div>
                 </div>
             </nav>
 
+            <!-- Tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="orders">
+                    <i class="fas fa-clipboard-list"></i> Pedidos
+                </button>
+                <button class="tab-btn" data-tab="menu">
+                    <i class="fas fa-utensils"></i> Menú
+                </button>
+                <button class="tab-btn" data-tab="sections">
+                    <i class="fas fa-tags"></i> Secciones
+                </button>
+            </div>
+
             <div class="admin-content">
-                <!-- Gestión de Pedidos -->
-                <section class="admin-section">
-                    <h3>📦 Pedidos Pendientes</h3>
+                <!-- Tab: Pedidos -->
+                <div id="tabOrders" class="tab-content active">
+                    <div class="section-header">
+                        <h3><i class="fas fa-clipboard-list"></i> Todos los Pedidos</h3>
+                        <div class="filter-orders">
+                            <select id="filterStatus" class="filter-select">
+                                <option value="all">Todos</option>
+                                <option value="pending">Pendientes</option>
+                                <option value="preparing">Preparando</option>
+                                <option value="ready">Listos</option>
+                                <option value="delivered">Entregados</option>
+                            </select>
+                        </div>
+                    </div>
                     <div id="ordersList" class="orders-list">
                         <!-- Generado dinámicamente -->
                     </div>
-                </section>
+                </div>
 
-                <!-- Gestión de Secciones -->
-                <section class="admin-section">
+                <!-- Tab: Menú -->
+                <div id="tabMenu" class="tab-content">
                     <div class="section-header">
-                        <h3>📂 Secciones</h3>
-                        <button class="btn-primary" id="addSectionBtn">
-                            <i class="fas fa-plus"></i> Nueva Sección
-                        </button>
-                    </div>
-                    <div id="sectionsList" class="admin-grid">
-                        <!-- Generado dinámicamente -->
-                    </div>
-                </section>
-
-                <!-- Gestión de Items -->
-                <section class="admin-section">
-                    <div class="section-header">
-                        <h3>🍽️ Platos</h3>
+                        <h3><i class="fas fa-utensils"></i> Platos del Menú</h3>
                         <button class="btn-primary" id="addItemBtn">
                             <i class="fas fa-plus"></i> Nuevo Plato
                         </button>
@@ -72,40 +97,59 @@
                     <div id="itemsList" class="admin-grid">
                         <!-- Generado dinámicamente -->
                     </div>
-                </section>
+                </div>
+
+                <!-- Tab: Secciones -->
+                <div id="tabSections" class="tab-content">
+                    <div class="section-header">
+                        <h3><i class="fas fa-tags"></i> Secciones</h3>
+                        <button class="btn-primary" id="addSectionBtn">
+                            <i class="fas fa-plus"></i> Nueva Sección
+                        </button>
+                    </div>
+                    <div id="sectionsList" class="admin-grid">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Modales -->
+        <!-- Modal: Sección -->
         <div class="modal" id="sectionModal">
             <div class="modal-content">
                 <span class="modal-close">&times;</span>
                 <h2 id="sectionModalTitle">Nueva Sección</h2>
                 <form id="sectionForm">
                     <div class="form-group">
-                        <label>Nombre</label>
+                        <label>Nombre *</label>
                         <input type="text" id="sectionName" required>
                     </div>
                     <div class="form-group">
                         <label>Icono (clase FontAwesome)</label>
                         <input type="text" id="sectionIcon" placeholder="fa-pizza-slice">
+                        <small>Ej: fa-bread-slice, fa-utensils, fa-cake</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Posición</label>
+                        <input type="number" id="sectionPosition" value="1" min="1">
                     </div>
                     <button type="submit" class="btn-primary">Guardar</button>
                 </form>
             </div>
         </div>
 
+        <!-- Modal: Item -->
         <div class="modal" id="itemModal">
             <div class="modal-content">
                 <span class="modal-close">&times;</span>
                 <h2 id="itemModalTitle">Nuevo Plato</h2>
                 <form id="itemForm">
                     <div class="form-group">
-                        <label>Sección</label>
+                        <label>Sección *</label>
                         <select id="itemSection" required></select>
                     </div>
                     <div class="form-group">
-                        <label>Nombre</label>
+                        <label>Nombre *</label>
                         <input type="text" id="itemName" required>
                     </div>
                     <div class="form-group">
@@ -113,7 +157,7 @@
                         <textarea id="itemDescription" rows="3"></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Precio</label>
+                        <label>Precio *</label>
                         <input type="number" id="itemPrice" step="0.01" required>
                     </div>
                     <div class="form-group">
@@ -126,15 +170,20 @@
                             Disponible
                         </label>
                     </div>
+                    <div class="form-group">
+                        <label>Posición</label>
+                        <input type="number" id="itemPosition" value="1" min="1">
+                    </div>
                     <button type="submit" class="btn-primary">Guardar</button>
                 </form>
             </div>
         </div>
 
-        <div class="modal" id="orderDetailModal">
-            <div class="modal-content">
+        <!-- Modal: Detalle de Pedido -->
+        <div class="modal" id="orderModal">
+            <div class="modal-content modal-order">
                 <span class="modal-close">&times;</span>
-                <h2>Detalle del Pedido</h2>
+                <h2><i class="fas fa-receipt"></i> Detalle del Pedido</h2>
                 <div id="orderDetail"></div>
             </div>
         </div>
