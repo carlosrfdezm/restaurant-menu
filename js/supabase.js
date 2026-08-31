@@ -267,3 +267,18 @@ export const deleteOrder = async (id) => {
         return handleError(error)
     }
 }
+
+// ===== ELIMINAR PEDIDO =====
+export const deleteOrder = async (id) => {
+    try {
+        const { error } = await supabase
+            .from('orders')
+            .delete()
+            .eq('id', id)
+        
+        if (error) return handleError(error)
+        return handleSuccess(null)
+    } catch (error) {
+        return handleError(error)
+    }
+}

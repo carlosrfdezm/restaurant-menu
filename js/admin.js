@@ -11,7 +11,8 @@ import {
     updateItem,
     deleteItem,
     getOrders,
-    updateOrderStatus
+    updateOrderStatus,
+    deleteOrder
 } from './supabase.js'
 
 // ===== ESTADO =====
@@ -275,8 +276,11 @@ const renderOrders = () => {
                     <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>✅ Listo</option>
                     <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>📦 Entregado</option>
                 </select>
-                <button class="btn-view-order" data-id="${order.id}">
+                <button class="btn-view-order" data-id="${order.id}" title="Ver detalle">
                     <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-delete-order" data-id="${order.id}" title="Eliminar pedido">
+                    <i class="fas fa-trash"></i>
                 </button>
             </div>
         </div>
@@ -299,6 +303,14 @@ const renderOrders = () => {
             if (order) showOrderDetail(order)
         })
     })
+    
+    // Event listeners para eliminar pedido
+    document.querySelectorAll('.btn-delete-order').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = parseInt(btn.dataset.id)
+            await deleteOrderHandler(id)
+        })
+    })
 }
 
 const updateBadge = () => {
@@ -317,6 +329,24 @@ const updateOrderStatusHandler = async (id, status) => {
             await loadOrders()
         } else {
             showNotification('❌ Error al actualizar: ' + result.error, 'error')
+        }
+    } catch (error) {
+        showNotification('❌ Error: ' + error.message, 'error')
+    }
+}
+
+// ===== ELIMINAR PEDIDO =====
+const deleteOrderHandler = async (id) => {
+    // Confirmar antes de eliminar
+    if (!confirm(`¿Estás seguro de eliminar el pedido #${id}?`)) return
+    
+    try {
+        const result = await deleteOrder(id)
+        if (result.success) {
+            showNotification(`✅ Pedido #${id} eliminado correctamente`, 'success')
+            await loadOrders()
+        } else {
+            showNotification('❌ Error al eliminar: ' + result.error, 'error')
         }
     } catch (error) {
         showNotification('❌ Error: ' + error.message, 'error')
@@ -718,6 +748,25 @@ style.textContent = `
     }
     
     .btn-view-order:hover { background: #2980b9; }
+    
+    .btn-delete-order {
+        padding: 0.3rem 0.6rem;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-delete-order:hover {
+        background: #c0392b;
+        transform: scale(1.05);
+    }
+    
+    .btn-delete-order:active {
+        transform: scale(0.95);
+    }
     
     .btn-nav {
         background: transparent;

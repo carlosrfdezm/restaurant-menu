@@ -313,3 +313,39 @@
         padding: 1.5rem;
     }
 }
+
+/* Botón eliminar pedido */
+.btn-delete-order {
+    padding: 0.3rem 0.6rem;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-delete-order:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+.btn-delete-order:active {
+    transform: scale(0.95);
+}
+
+/* Animación para eliminar */
+.order-card.removing {
+    animation: slideOut 0.3s ease forwards;
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
