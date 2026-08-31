@@ -1,4 +1,4 @@
-// ===== ADMIN.JS - VERSIÓN COMPLETA =====
+// ===== ADMIN.JS - CON DISEÑO MEJORADO =====
 import { 
     signIn,
     signOut,
@@ -16,16 +16,12 @@ import {
     deleteOrder
 } from './supabase.js'
 
-console.log('🚀 Admin panel iniciado')
-
 // ===== ESTADO =====
 const state = {
     user: null,
+    orders: [],
     sections: [],
     items: [],
-    orders: [],
-    editingSection: null,
-    editingItem: null,
     filterStatus: 'all'
 }
 
@@ -38,15 +34,19 @@ const elements = {
     adminEmail: $('adminEmail'),
     adminPassword: $('adminPassword'),
     logoutBtn: $('logoutBtn'),
+    refreshBtn: $('refreshBtn'),
     userEmail: $('userEmail'),
     totalOrders: $('totalOrders'),
     pendingOrders: $('pendingOrders'),
     totalItems: $('totalItems'),
     totalSections: $('totalSections'),
-    recentOrders: $('recentOrders')
+    pendingBadge: $('pendingBadge'),
+    ordersList: $('ordersList'),
+    filterStatus: $('filterStatus'),
+    orderModal: $('orderModal'),
+    orderDetail: $('orderDetail'),
+    closeModal: $('closeModal')
 }
-
-console.log('Elementos encontrados:', Object.keys(elements).filter(k => elements[k]))
 
 // ===== NOTIFICACIONES =====
 const showNotification = (message, type = 'success') => {
@@ -66,12 +66,12 @@ const showNotification = (message, type = 'success') => {
         color: white;
         padding: 1rem 1.5rem;
         border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         z-index: 9999;
         animation: slideIn 0.3s ease;
         max-width: 400px;
     `
-    notification.innerHTML = message
+    notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`
     document.body.appendChild(notification)
     
     setTimeout(() => {
@@ -84,78 +84,52 @@ const showNotification = (message, type = 'success') => {
 // ===== AUTENTICACIÓN =====
 const checkAuth = async () => {
     try {
-        console.log('🔍 Verificando autenticación...')
         const result = await getCurrentUser()
-        console.log('📊 Resultado:', result)
-        
         if (result.success && result.data) {
             state.user = result.data
-            console.log('✅ Usuario autenticado:', state.user.email)
-            if (elements.userEmail) {
-                elements.userEmail.textContent = state.user.email
-            }
+            if (elements.userEmail) elements.userEmail.textContent = state.user.email
             showDashboard()
             await loadAllData()
-            // Actualizar cada 30 segundos
             setInterval(loadOrders, 30000)
         } else {
-            console.log('❌ No autenticado')
             showLogin()
         }
     } catch (error) {
-        console.error('❌ Error en checkAuth:', error)
+        console.error('Error:', error)
         showLogin()
     }
 }
 
 const showLogin = () => {
-    if (elements.loginSection) {
-        elements.loginSection.style.display = 'flex'
-    }
-    if (elements.dashboardSection) {
-        elements.dashboardSection.style.display = 'none'
-    }
+    if (elements.loginSection) elements.loginSection.style.display = 'flex'
+    if (elements.dashboardSection) elements.dashboardSection.style.display = 'none'
 }
 
 const showDashboard = () => {
-    if (elements.loginSection) {
-        elements.loginSection.style.display = 'none'
-    }
-    if (elements.dashboardSection) {
-        elements.dashboardSection.style.display = 'block'
-    }
-    console.log('📊 Dashboard visible')
+    if (elements.loginSection) elements.loginSection.style.display = 'none'
+    if (elements.dashboardSection) elements.dashboardSection.style.display = 'block'
 }
 
 // ===== LOGIN =====
 if (elements.loginForm) {
     elements.loginForm.addEventListener('submit', async (e) => {
         e.preventDefault()
-        console.log('📝 Intentando login...')
-        
         const email = elements.adminEmail.value
         const password = elements.adminPassword.value
         
         try {
             const result = await signIn(email, password)
-            console.log('📊 Resultado login:', result)
-            
             if (result.success) {
                 state.user = result.data.user
-                console.log('✅ Login exitoso!')
-                if (elements.userEmail) {
-                    elements.userEmail.textContent = state.user.email
-                }
+                if (elements.userEmail) elements.userEmail.textContent = state.user.email
                 showDashboard()
                 await loadAllData()
                 elements.loginForm.reset()
                 showNotification('✅ Sesión iniciada correctamente', 'success')
             } else {
-                console.error('❌ Error:', result.error)
                 showNotification('❌ Error: ' + result.error, 'error')
             }
         } catch (error) {
-            console.error('❌ Error:', error)
             showNotification('❌ Error: ' + error.message, 'error')
         }
     })
@@ -171,65 +145,69 @@ if (elements.logoutBtn) {
     })
 }
 
+// ===== REFRESH =====
+if (elements.refreshBtn) {
+    elements.refreshBtn.addEventListener('click', () => {
+        loadAllData()
+        showNotification('🔄 Actualizado', 'info')
+    })
+}
+
+// ===== FILTRO =====
+if (elements.filterStatus) {
+    elements.filterStatus.addEventListener('change', (e) => {
+        state.filterStatus = e.target.value
+        renderOrders()
+    })
+}
+
 // ===== CARGA DE DATOS =====
 const loadAllData = async () => {
-    console.log('📥 Cargando todos los datos...')
     await Promise.all([
         loadOrders(),
         loadSections(),
         loadItems()
     ])
-    console.log('✅ Todos los datos cargados')
 }
 
 const loadOrders = async () => {
     try {
-        console.log('📦 Cargando pedidos...')
         const result = await getOrders()
-        console.log('📊 Resultado pedidos:', result)
-        
         if (result.success) {
             state.orders = result.data || []
-            console.log(`📦 Pedidos cargados: ${state.orders.length}`)
             renderOrders()
             updateStats()
-        } else {
-            console.error('❌ Error cargando pedidos:', result.error)
         }
     } catch (error) {
-        console.error('❌ Error:', error)
+        console.error('Error:', error)
     }
 }
 
 const loadSections = async () => {
     try {
-        console.log('📂 Cargando secciones...')
         const result = await getMenuSections()
         if (result.success) {
             state.sections = result.data || []
-            console.log(`📂 Secciones cargadas: ${state.sections.length}`)
             if (elements.totalSections) {
                 elements.totalSections.textContent = state.sections.length
             }
         }
     } catch (error) {
-        console.error('❌ Error:', error)
+        console.error('Error:', error)
     }
 }
 
 const loadItems = async () => {
     try {
-        console.log('🍽️ Cargando items...')
         const result = await getMenuItems()
         if (result.success) {
             state.items = result.data || []
-            console.log(`🍽️ Items cargados: ${state.items.length}`)
             if (elements.totalItems) {
                 elements.totalItems.textContent = state.items.length
             }
         }
     } catch (error) {
-        console.error('❌ Error:', error)
+        console.error('Error:', error)
     }
 }
 
@@ -243,54 +221,59 @@ const updateStats = () => {
     if (elements.pendingOrders) {
         elements.pendingOrders.textContent = pending
     }
+    
+    if (elements.pendingBadge) {
+        elements.pendingBadge.textContent = pending
+        elements.pendingBadge.style.display = pending > 0 ? 'inline-block' : 'none'
+    }
 }
 
 // ===== RENDERIZAR PEDIDOS =====
 const renderOrders = () => {
-    if (!elements.recentOrders) {
-        console.warn('⚠️ elements.recentOrders no encontrado')
-        return
+    if (!elements.ordersList) return
+    
+    let filtered = state.orders
+    if (state.filterStatus !== 'all') {
+        filtered = filtered.filter(o => o.status === state.filterStatus)
     }
     
-    if (state.orders.length === 0) {
-        elements.recentOrders.innerHTML = `
-            <div style="text-align: center; padding: 2rem; color: #999;">
-                <i class="fas fa-clipboard-list" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
-                <p>No hay pedidos aún</p>
+    if (filtered.length === 0) {
+        elements.ordersList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <p>${state.orders.length === 0 ? 'No hay pedidos aún' : 'No hay pedidos con este filtro'}</p>
             </div>
         `
         return
     }
     
-    // Mostrar últimos 10 pedidos
-    const recent = state.orders.slice(0, 10)
-    
-    elements.recentOrders.innerHTML = recent.map(order => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; gap: 0.5rem;">
-            <div>
-                <strong>#${order.id}</strong>
-                <span style="margin: 0 0.5rem; color: #666;">Mesa ${order.table_number || 'N/A'}</span>
-                <span style="color: #666; font-size: 0.9rem;">${order.customer_name || 'Cliente'}</span>
+    elements.ordersList.innerHTML = filtered.map(order => `
+        <div class="order-card">
+            <div class="info">
+                <span class="id">#${order.id}</span>
+                <span class="table">Mesa ${order.table_number || 'N/A'}</span>
+                <span class="customer">${order.customer_name || 'Cliente'}</span>
+                <span class="total">$${Number(order.total).toFixed(2)}</span>
+                <span class="status-badge ${order.status}">${getStatusText(order.status)}</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <span style="font-weight: bold; color: #e74c3c;">$${Number(order.total).toFixed(2)}</span>
-                <span style="padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; background: ${getStatusColor(order.status)}; color: white;">
-                    ${getStatusText(order.status)}
-                </span>
-                <select class="order-status-select" data-id="${order.id}" style="padding: 0.2rem 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <div class="actions">
+                <select class="order-status-select" data-id="${order.id}">
                     <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>⏳ Pendiente</option>
                     <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>🔪 Preparando</option>
                     <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>✅ Listo</option>
                     <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>📦 Entregado</option>
                 </select>
-                <button class="btn-delete-order" data-id="${order.id}" style="padding: 0.2rem 0.5rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                <button class="btn-view" data-id="${order.id}" title="Ver detalle">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-delete" data-id="${order.id}" title="Eliminar">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
         </div>
     `).join('')
     
-    // Event listeners para cambiar estado
+    // Event listeners
     document.querySelectorAll('.order-status-select').forEach(select => {
         select.addEventListener('change', async (e) => {
             const id = parseInt(select.dataset.id)
@@ -299,8 +282,15 @@ const renderOrders = () => {
         })
     })
     
-    // Event listeners para eliminar
-    document.querySelectorAll('.btn-delete-order').forEach(btn => {
+    document.querySelectorAll('.btn-view').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = parseInt(btn.dataset.id)
+            const order = state.orders.find(o => o.id === id)
+            if (order) showOrderDetail(order)
+        })
+    })
+    
+    document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', async () => {
             const id = parseInt(btn.dataset.id)
             await deleteOrderHandler(id)
@@ -319,22 +309,12 @@ const getStatusText = (status) => {
     return map[status] || status
 }
 
-const getStatusColor = (status) => {
-    const map = {
-        'pending': '#f39c12',
-        'preparing': '#3498db',
-        'ready': '#27ae60',
-        'delivered': '#95a5a6'
-    }
-    return map[status] || '#95a5a6'
-}
-
 // ===== ACTUALIZAR ESTADO =====
 const updateOrderStatusHandler = async (id, status) => {
     try {
         const result = await updateOrderStatus(id, status)
         if (result.success) {
-            showNotification(`✅ Pedido #${id} actualizado a ${getStatusText(status)}`, 'success')
+            showNotification(`✅ Pedido #${id} actualizado`, 'success')
             await loadOrders()
         } else {
             showNotification('❌ Error: ' + result.error, 'error')
@@ -346,7 +326,7 @@ const updateOrderStatusHandler = async (id, status) => {
 
 // ===== ELIMINAR PEDIDO =====
 const deleteOrderHandler = async (id) => {
-    if (!confirm(`¿Estás seguro de eliminar el pedido #${id}?`)) return
+    if (!confirm(`¿Eliminar pedido #${id}?`)) return
     
     try {
         const result = await deleteOrder(id)
@@ -361,30 +341,51 @@ const deleteOrderHandler = async (id) => {
     }
 }
 
-// ===== ESTILOS ADICIONALES =====
-const styles = document.createElement('style')
-styles.textContent = `
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateX(20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
+// ===== VER DETALLE =====
+const showOrderDetail = (order) => {
+    if (!elements.orderDetail) return
     
-    .status-pending { background: #f39c12; color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
-    .status-preparing { background: #3498db; color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
-    .status-ready { background: #27ae60; color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
-    .status-delivered { background: #95a5a6; color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
+    const itemsHTML = order.items?.map(item => `
+        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0;">
+            <span>${item.quantity}x ${item.name}</span>
+            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+        </div>
+    `).join('') || '<p>No hay items</p>'
     
-    .btn-delete-order:hover {
-        background: #c0392b !important;
-        transform: scale(1.05);
-    }
+    elements.orderDetail.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+            <div><strong>Pedido #${order.id}</strong></div>
+            <div><strong>Mesa:</strong> ${order.table_number || 'N/A'}</div>
+            <div><strong>Cliente:</strong> ${order.customer_name || 'Cliente'}</div>
+            <div><strong>Estado:</strong> <span class="status-badge ${order.status}">${getStatusText(order.status)}</span></div>
+            <div><strong>Fecha:</strong> ${new Date(order.created_at).toLocaleString()}</div>
+        </div>
+        <h4 style="margin: 1rem 0 0.5rem;">Items:</h4>
+        ${itemsHTML}
+        <div style="text-align: right; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #eee; font-size: 1.2rem; font-weight: bold;">
+            Total: $${Number(order.total).toFixed(2)}
+        </div>
+    `
     
-    .order-status-select:hover {
-        border-color: #3498db;
+    if (elements.orderModal) {
+        elements.orderModal.classList.add('active')
     }
-`
-document.head.appendChild(styles)
+}
+
+// ===== CERRAR MODAL =====
+if (elements.closeModal) {
+    elements.closeModal.addEventListener('click', () => {
+        if (elements.orderModal) elements.orderModal.classList.remove('active')
+    })
+}
+
+if (elements.orderModal) {
+    elements.orderModal.addEventListener('click', (e) => {
+        if (e.target === elements.orderModal) {
+            elements.orderModal.classList.remove('active')
+        }
+    })
+}
 
 // ===== INICIAR =====
-console.log('🔄 Iniciando...')
 checkAuth()
