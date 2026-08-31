@@ -22,7 +22,6 @@ body {
     color: var(--secondary);
     line-height: 1.6;
     padding-bottom: 80px;
-    padding-top: 130px;
 }
 
 /* Header */
@@ -91,10 +90,9 @@ body {
     display: flex;
     gap: 0.8rem;
     position: sticky;
-    top: 0px;
+    top: 80px;
     z-index: 90;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    border-bottom: 1px solid #f0f0f0;
 }
 
 .category-btn {
