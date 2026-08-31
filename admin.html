@@ -46,6 +46,9 @@
                         <button class="btn-nav" id="refreshBtn" title="Actualizar">
                             <i class="fas fa-sync"></i>
                         </button>
+                        <button class="btn-nav" id="generateQRBtn" title="Generar QR">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
                         <button class="btn-nav btn-logout" id="logoutBtn">
                             <i class="fas fa-sign-out-alt"></i>
                         </button>
@@ -64,6 +67,9 @@
                 <button class="tab-btn" data-tab="sections">
                     <i class="fas fa-tags"></i> Secciones
                 </button>
+                <button class="tab-btn" data-tab="qr">
+                    <i class="fas fa-qrcode"></i> QR
+                </button>
             </div>
 
             <div class="admin-content">
@@ -81,9 +87,7 @@
                             </select>
                         </div>
                     </div>
-                    <div id="ordersList" class="orders-list">
-                        <!-- Generado dinámicamente -->
-                    </div>
+                    <div id="ordersList" class="orders-list"></div>
                 </div>
 
                 <!-- Tab: Menú -->
@@ -94,9 +98,7 @@
                             <i class="fas fa-plus"></i> Nuevo Plato
                         </button>
                     </div>
-                    <div id="itemsList" class="admin-grid">
-                        <!-- Generado dinámicamente -->
-                    </div>
+                    <div id="itemsList" class="admin-grid"></div>
                 </div>
 
                 <!-- Tab: Secciones -->
@@ -107,14 +109,70 @@
                             <i class="fas fa-plus"></i> Nueva Sección
                         </button>
                     </div>
-                    <div id="sectionsList" class="admin-grid">
-                        <!-- Generado dinámicamente -->
+                    <div id="sectionsList" class="admin-grid"></div>
+                </div>
+
+                <!-- Tab: QR -->
+                <div id="tabQR" class="tab-content">
+                    <div class="qr-generator-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-qrcode"></i> Generador de Códigos QR</h3>
+                        </div>
+                        
+                        <div class="qr-generator-container">
+                            <div class="qr-controls">
+                                <div class="form-group">
+                                    <label>Número de Mesa</label>
+                                    <input type="number" id="qrTableNumber" min="1" max="99" value="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Color del QR</label>
+                                    <input type="color" id="qrColor" value="#2c3e50">
+                                </div>
+                                <div class="form-group">
+                                    <label>Color de fondo</label>
+                                    <input type="color" id="qrBgColor" value="#ffffff">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tamaño (px)</label>
+                                    <select id="qrSize">
+                                        <option value="200">200px</option>
+                                        <option value="300" selected>300px</option>
+                                        <option value="400">400px</option>
+                                        <option value="500">500px</option>
+                                    </select>
+                                </div>
+                                <button class="btn-primary" id="generateSingleQRBtn" style="width: 100%;">
+                                    <i class="fas fa-qrcode"></i> Generar QR
+                                </button>
+                                <button class="btn-primary" id="downloadQRBtn" style="width: 100%; margin-top: 0.5rem; background: #27ae60;">
+                                    <i class="fas fa-download"></i> Descargar QR
+                                </button>
+                                <button class="btn-primary" id="generateAllQRBtn" style="width: 100%; margin-top: 0.5rem; background: #3498db;">
+                                    <i class="fas fa-file-pdf"></i> Generar Todos los QR
+                                </button>
+                            </div>
+                            <div class="qr-preview">
+                                <div id="qrPreviewContainer">
+                                    <img id="qrImage" src="" alt="Código QR" style="display: none;">
+                                    <div id="qrPlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; background: #f8f9fa; border-radius: 12px; border: 2px dashed #ddd;">
+                                        <i class="fas fa-qrcode" style="font-size: 4rem; color: #ccc; margin-bottom: 1rem;"></i>
+                                        <p style="color: #999;">Genera un código QR para tu mesa</p>
+                                    </div>
+                                </div>
+                                <div id="qrInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                                    <p><strong>Mesa:</strong> <span id="qrInfoTable">-</span></p>
+                                    <p><strong>URL:</strong> <span id="qrInfoUrl" style="word-break: break-all;">-</span></p>
+                                    <p><strong>Estado:</strong> <span id="qrInfoStatus" style="color: #27ae60;">Listo para usar</span></p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Modal: Sección -->
+        <!-- Modales (se mantienen igual) -->
         <div class="modal" id="sectionModal">
             <div class="modal-content">
                 <span class="modal-close">&times;</span>
@@ -125,9 +183,8 @@
                         <input type="text" id="sectionName" required>
                     </div>
                     <div class="form-group">
-                        <label>Icono (clase FontAwesome)</label>
+                        <label>Icono</label>
                         <input type="text" id="sectionIcon" placeholder="fa-pizza-slice">
-                        <small>Ej: fa-bread-slice, fa-utensils, fa-cake</small>
                     </div>
                     <div class="form-group">
                         <label>Posición</label>
@@ -138,7 +195,6 @@
             </div>
         </div>
 
-        <!-- Modal: Item -->
         <div class="modal" id="itemModal">
             <div class="modal-content">
                 <span class="modal-close">&times;</span>
@@ -179,7 +235,6 @@
             </div>
         </div>
 
-        <!-- Modal: Detalle de Pedido -->
         <div class="modal" id="orderModal">
             <div class="modal-content modal-order">
                 <span class="modal-close">&times;</span>

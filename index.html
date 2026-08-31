@@ -29,6 +29,12 @@
             </div>
         </header>
 
+        <!-- Banner de bienvenida (se muestra si viene de QR) -->
+        <div id="welcomeBanner" style="display: none; background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 1rem; text-align: center; position: sticky; top: 120px; z-index: 80;">
+            <h3 style="margin: 0;"><i class="fas fa-utensils"></i> ¡Bienvenido a la Mesa <span id="welcomeTable">-</span>!</h3>
+            <p style="margin: 0.3rem 0 0; opacity: 0.8; font-size: 0.9rem;">Escanea el código QR para ver la carta digital</p>
+        </div>
+
         <!-- Categorías -->
         <nav class="categories-nav" id="categoriesNav">
             <!-- Generado dinámicamente -->
@@ -61,6 +67,43 @@
 
         <!-- Overlay -->
         <div class="overlay" id="overlay"></div>
+
+        <!-- Panel de seguimiento de pedido -->
+        <div class="order-tracking-panel" id="orderTrackingPanel" style="display: none;">
+            <div class="tracking-header">
+                <h3><i class="fas fa-truck"></i> Seguimiento del Pedido</h3>
+                <button class="close-tracking" id="closeTracking">&times;</button>
+            </div>
+            <div id="trackingContent">
+                <div class="tracking-status">
+                    <div class="status-step" id="stepPending">
+                        <i class="fas fa-clock"></i>
+                        <span>Pendiente</span>
+                    </div>
+                    <div class="status-line"></div>
+                    <div class="status-step" id="stepPreparing">
+                        <i class="fas fa-kitchen-set"></i>
+                        <span>Preparando</span>
+                    </div>
+                    <div class="status-line"></div>
+                    <div class="status-step" id="stepReady">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Listo</span>
+                    </div>
+                    <div class="status-line"></div>
+                    <div class="status-step" id="stepDelivered">
+                        <i class="fas fa-flag-checkered"></i>
+                        <span>Entregado</span>
+                    </div>
+                </div>
+                <div class="tracking-info">
+                    <p><strong>Pedido #<span id="trackingOrderId">-</span></strong></p>
+                    <p><strong>Mesa:</strong> <span id="trackingTable">-</span></p>
+                    <p><strong>Total:</strong> <span id="trackingTotal">-</span></p>
+                    <p><strong>Estado:</strong> <span id="trackingStatus" class="status-pending">Pendiente</span></p>
+                </div>
+            </div>
+        </div>
 
         <!-- Acceso rápido al admin -->
         <div class="admin-access-hint">

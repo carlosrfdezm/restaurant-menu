@@ -331,3 +331,177 @@ placeOrderBtn.addEventListener('click', async () => {
 
 // Iniciar
 loadData()
+
+// ===== SEGUIMIENTO DE PEDIDOS =====
+let trackingInterval = null;
+let currentOrderId = null;
+
+// Mostrar panel de seguimiento
+const showTrackingPanel = (orderId, table, total) => {
+    currentOrderId = orderId;
+    document.getElementById('trackingOrderId').textContent = orderId;
+    document.getElementById('trackingTable').textContent = table;
+    document.getElementById('trackingTotal').textContent = `$${Number(total).toFixed(2)}`;
+    document.getElementById('orderTrackingPanel').style.display = 'block';
+    document.getElementById('overlay').classList.add('active');
+    
+    // Empezar a buscar actualizaciones
+    if (trackingInterval) clearInterval(trackingInterval);
+    trackingInterval = setInterval(checkOrderStatus, 5000);
+    checkOrderStatus(); // Verificar inmediatamente
+}
+
+// Cerrar panel de seguimiento
+document.getElementById('closeTracking')?.addEventListener('click', () => {
+    document.getElementById('orderTrackingPanel').style.display = 'none';
+    document.getElementById('overlay').classList.remove('active');
+    if (trackingInterval) {
+        clearInterval(trackingInterval);
+        trackingInterval = null;
+    }
+});
+
+// Verificar estado del pedido
+const checkOrderStatus = async () => {
+    if (!currentOrderId) return;
+    
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('status, id')
+            .eq('id', currentOrderId)
+            .single();
+        
+        if (error) {
+            console.error('Error checking order status:', error);
+            return;
+        }
+        
+        if (data) {
+            updateTrackingStatus(data.status);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Actualizar UI de seguimiento
+const updateTrackingStatus = (status) => {
+    const steps = ['pending', 'preparing', 'ready', 'delivered'];
+    const statusMap = {
+        'pending': '⏳ Pendiente',
+        'preparing': '🔪 Preparando',
+        'ready': '✅ Listo',
+        'delivered': '📦 Entregado'
+    };
+    
+    // Actualizar texto
+    document.getElementById('trackingStatus').textContent = statusMap[status] || status;
+    document.getElementById('trackingStatus').className = `status-${status}`;
+    
+    // Actualizar pasos
+    steps.forEach((step, index) => {
+        const element = document.getElementById(`step${step.charAt(0).toUpperCase() + step.slice(1)}`);
+        if (!element) return;
+        
+        const stepIndex = steps.indexOf(step);
+        const currentIndex = steps.indexOf(status);
+        
+        // Resetear clases
+        element.classList.remove('active', 'completed');
+        
+        if (stepIndex < currentIndex) {
+            element.classList.add('completed');
+        } else if (stepIndex === currentIndex) {
+            element.classList.add('active');
+        }
+    });
+    
+    // Si está entregado, mostrar mensaje y detener actualizaciones
+    if (status === 'delivered') {
+        if (trackingInterval) {
+            clearInterval(trackingInterval);
+            trackingInterval = null;
+        }
+        showNotification('🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.', 'success');
+    }
+}
+
+// Modificar la función de crear pedido para mostrar seguimiento
+const originalPlaceOrder = placeOrder;
+placeOrder = async function() {
+    if (!elements.tableNumber.value) {
+        showNotification('Por favor, ingresa el número de mesa', 'warning');
+        elements.tableNumber.focus();
+        return;
+    }
+
+    if (state.cart.length === 0) {
+        showNotification('El carrito está vacío', 'warning');
+        return;
+    }
+
+    elements.placeOrderBtn.disabled = true;
+    elements.placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+    try {
+        const total = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        const order = {
+            customer_name: `Mesa ${elements.tableNumber.value}`,
+            items: state.cart.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: Number(item.price),
+                quantity: item.quantity
+            })),
+            total: Number(total.toFixed(2)),
+            table_number: parseInt(elements.tableNumber.value),
+            status: 'pending'
+        };
+
+        console.log('📦 Enviando pedido:', order);
+        
+        const result = await createOrder(order);
+        
+        if (!result.success) {
+            throw new Error(result.error);
+        }
+        
+        console.log('✅ Pedido creado:', result.data);
+        
+        const orderData = result.data[0];
+        showNotification('🎉 ¡Pedido realizado con éxito!', 'success');
+        
+        // Mostrar panel de seguimiento
+        showTrackingPanel(
+            orderData.id,
+            orderData.table_number,
+            orderData.total
+        );
+        
+        // Limpiar carrito
+        clearCart();
+        closeCartPanel();
+        
+        // Notificación adicional
+        setTimeout(() => {
+            showNotification('📱 Puedes seguir el estado de tu pedido en el panel', 'info');
+        }, 1000);
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    } finally {
+        elements.placeOrderBtn.disabled = false;
+        elements.placeOrderBtn.innerHTML = '<i class="fas fa-check"></i> Realizar Pedido';
+    }
+}
+
+// ===== DETECTAR QR Y AUTOMATIZAR MESA =====
+const initQRDetection = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const table = urlParams.get('table');
+    const mode = urlParams.get('mode');
+    
+   
