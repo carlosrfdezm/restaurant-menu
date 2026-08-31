@@ -1,10 +1,15 @@
+// Configuración de Supabase - CON TUS CREDENCIALES REALES
+const supabaseUrl = 'https://ftoaeotkdzwjlsiczlaj.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0b2Flb3RrZHp3amxzaWN6bGFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMDQ2MTYsImV4cCI6MjEwMzc4MDYxNn0.AUjIqbuvpOs4RV3BtnuRuDvqcRKFMJ80CeFyqRU-wfs'
+
+// Importar la librería
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
-// Reemplaza con tus credenciales
-const supabaseUrl = 'https://tu-proyecto.supabase.co'
-const supabaseKey = 'tu-anon-key-public'
-
+// Crear el cliente
 export const supabase = createClient(supabaseUrl, supabaseKey)
+
+console.log('✅ Supabase configurado correctamente')
+console.log('📡 URL:', supabaseUrl)
 
 // Funciones de autenticación para admin
 export const signIn = async (email, password) => {
