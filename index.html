@@ -13,9 +13,14 @@
         <header class="header">
             <div class="header-content">
                 <h1>🍽️ Carta Digital</h1>
-                <div class="cart-icon" id="cartIcon">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-badge" id="cartBadge">0</span>
+                <div class="header-actions">
+                    <a href="admin.html" class="btn-admin-link" title="Panel de Administración">
+                        <i class="fas fa-user-cog"></i>
+                    </a>
+                    <div class="cart-icon" id="cartIcon">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="cart-badge" id="cartBadge">0</span>
+                    </div>
                 </div>
             </div>
             <div class="table-selector">
@@ -56,6 +61,13 @@
 
         <!-- Overlay -->
         <div class="overlay" id="overlay"></div>
+
+        <!-- Acceso rápido al admin -->
+        <div class="admin-access-hint">
+            <a href="admin.html" title="Panel de Administración">
+                <i class="fas fa-user-cog"></i> Admin
+            </a>
+        </div>
     </div>
 
     <script type="importmap">
