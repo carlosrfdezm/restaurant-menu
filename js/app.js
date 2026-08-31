@@ -1,3 +1,4 @@
+// ===== APP.JS - CON DETECCIÓN DE QR =====
 import { 
     supabase,
     getMenuSections, 
@@ -87,6 +88,35 @@ const showNotification = (message, type = 'success') => {
     }, 3000)
 }
 
+// ===== DETECCIÓN DE QR =====
+const initQRDetection = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const table = urlParams.get('table');
+    const mode = urlParams.get('mode');
+    
+    console.log('🔍 QR Detectado:', { table, mode })
+    
+    if (table) {
+        // Auto-completar número de mesa
+        document.getElementById('tableNumber').value = table;
+        
+        // Mostrar banner de bienvenida
+        const banner = document.getElementById('welcomeBanner');
+        if (banner) {
+            document.getElementById('welcomeTable').textContent = table;
+            banner.style.display = 'block';
+        }
+        
+        showNotification(`🍽️ Bienvenido a la Mesa ${table}`, 'info');
+    }
+    
+    if (mode === 'client') {
+        // Modo cliente - ocultar acceso admin
+        document.querySelector('.btn-admin-link')?.style.setProperty('display', 'none', 'important');
+        document.querySelector('.admin-access-hint')?.style.setProperty('display', 'none', 'important');
+    }
+}
+
 // ===== CARGA DE DATOS =====
 const loadData = async () => {
     try {
@@ -131,7 +161,7 @@ const loadData = async () => {
     }
 }
 
-// ===== RENDERIZADO =====
+// ===== RENDERIZADO (mantener igual) =====
 const renderCategories = () => {
     const categoriesHTML = `
         <button class="category-btn active" data-section="all">
@@ -292,7 +322,6 @@ window.removeFromCart = removeFromCart
 let trackingInterval = null;
 let currentOrderId = null;
 
-// Mostrar panel de seguimiento
 const showTrackingPanel = (orderId, table, total) => {
     currentOrderId = orderId;
     document.getElementById('trackingOrderId').textContent = orderId;
@@ -306,7 +335,6 @@ const showTrackingPanel = (orderId, table, total) => {
     checkOrderStatus();
 }
 
-// Cerrar panel de seguimiento
 document.getElementById('closeTracking')?.addEventListener('click', () => {
     document.getElementById('orderTrackingPanel').style.display = 'none';
     document.getElementById('overlay').classList.remove('active');
@@ -316,7 +344,6 @@ document.getElementById('closeTracking')?.addEventListener('click', () => {
     }
 });
 
-// Verificar estado del pedido
 const checkOrderStatus = async () => {
     if (!currentOrderId) return;
     
@@ -340,7 +367,6 @@ const checkOrderStatus = async () => {
     }
 }
 
-// Actualizar UI de seguimiento
 const updateTrackingStatus = (status) => {
     const steps = ['pending', 'preparing', 'ready', 'delivered'];
     const statusMap = {
@@ -375,33 +401,6 @@ const updateTrackingStatus = (status) => {
             trackingInterval = null;
         }
         showNotification('🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.', 'success');
-    }
-}
-
-// ===== DETECTAR QR Y AUTOMATIZAR MESA =====
-const initQRDetection = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const table = urlParams.get('table');
-    const mode = urlParams.get('mode');
-    
-    if (table) {
-        // Auto-completar número de mesa
-        document.getElementById('tableNumber').value = table;
-        
-        // Mostrar banner de bienvenida
-        const banner = document.getElementById('welcomeBanner');
-        if (banner) {
-            document.getElementById('welcomeTable').textContent = table;
-            banner.style.display = 'block';
-        }
-        
-        showNotification(`🍽️ Bienvenido a la Mesa ${table}`, 'info');
-    }
-    
-    if (mode === 'client') {
-        // Modo cliente - ocultar acceso admin
-        document.querySelector('.btn-admin-link')?.style.setProperty('display', 'none', 'important');
-        document.querySelector('.admin-access-hint')?.style.setProperty('display', 'none', 'important');
     }
 }
 
@@ -640,7 +639,6 @@ trackingStyles.textContent = `
         font-weight: bold;
         padding: 0.2rem 0.8rem;
         border-radius: 20px;
-        background: #f0f0f0;
     }
     
     #trackingStatus.status-pending {
@@ -683,7 +681,7 @@ trackingStyles.textContent = `
 `;
 document.head.appendChild(trackingStyles);
 
-// ===== INICIO =====
+// ===== ESTILOS BASE =====
 const style = document.createElement('style')
 style.textContent = `
     @keyframes slideUp {
@@ -694,17 +692,6 @@ style.textContent = `
         to {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
-        }
-    }
-    
-    @keyframes slideDown {
-        from {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-        to {
-            opacity: 0;
-            transform: translateX(-50%) translateY(20px);
         }
     }
     
@@ -755,4 +742,5 @@ style.textContent = `
 `
 document.head.appendChild(style)
 
+// ===== INICIAR =====
 loadData()

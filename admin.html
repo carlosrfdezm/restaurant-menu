@@ -119,6 +119,22 @@
             box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
         
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-success:hover {
+            background: #219a52;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
         /* ===== DASHBOARD ===== */
         .dashboard-container {
             max-width: 1400px;
@@ -157,7 +173,8 @@
         .dashboard-header .right {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.8rem;
+            flex-wrap: wrap;
         }
         
         .dashboard-header .right .user-email {
@@ -192,8 +209,8 @@
             transform: translateY(-2px);
         }
         
-        .btn-refresh {
-            padding: 0.5rem 1rem;
+        .btn-icon {
+            padding: 0.5rem 0.8rem;
             background: var(--accent);
             color: white;
             border: none;
@@ -202,12 +219,59 @@
             transition: var(--transition);
         }
         
-        .btn-refresh:hover {
-            background: #2980b9;
-            transform: rotate(180deg);
+        .btn-icon:hover {
+            transform: scale(1.05);
         }
         
-        /* ===== STATS GRID ===== */
+        /* ===== TABS ===== */
+        .admin-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            overflow-x: auto;
+        }
+        
+        .tab-btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: #666;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        
+        .tab-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ===== STATS ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -251,7 +315,7 @@
         .stat-card.items .number { color: var(--success); }
         .stat-card.sections .number { color: #8e44ad; }
         
-        /* ===== ORDERS SECTION ===== */
+        /* ===== ORDERS ===== */
         .orders-section {
             background: white;
             border-radius: var(--border-radius);
@@ -293,7 +357,6 @@
             border-color: var(--accent);
         }
         
-        /* ===== ORDER CARD ===== */
         .order-card {
             display: flex;
             justify-content: space-between;
@@ -411,6 +474,123 @@
         .status-badge.ready { background: #27ae60; }
         .status-badge.delivered { background: #95a5a6; }
         
+        /* ===== QR GENERATOR ===== */
+        .qr-generator-section {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+        }
+        
+        .qr-generator-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+        
+        .qr-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .qr-controls .form-group {
+            margin-bottom: 0;
+        }
+        
+        .qr-controls .form-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            display: block;
+        }
+        
+        .qr-controls .form-group input,
+        .qr-controls .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        .qr-controls .form-group input[type="color"] {
+            padding: 0.2rem;
+            height: 40px;
+            cursor: pointer;
+        }
+        
+        .qr-controls .form-group input:focus,
+        .qr-controls .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .qr-controls .btn-primary {
+            width: 100%;
+        }
+        
+        .qr-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 2rem;
+            min-height: 400px;
+            border: 2px dashed #e0e0e0;
+        }
+        
+        #qrImage {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        #qrPlaceholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+        }
+        
+        #qrPlaceholder i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        #qrInfo {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        #qrInfo p {
+            margin: 0.3rem 0;
+            font-size: 0.9rem;
+        }
+        
+        #qrInfo p strong {
+            color: var(--primary);
+            min-width: 80px;
+            display: inline-block;
+        }
+        
+        #qrInfoUrl {
+            color: var(--accent);
+            word-break: break-all;
+            font-size: 0.8rem;
+        }
+        
         /* ===== EMPTY STATE ===== */
         .empty-state {
             text-align: center;
@@ -511,6 +691,25 @@
             .login-box {
                 padding: 2rem;
             }
+            
+            .qr-generator-container {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .qr-preview {
+                min-height: 250px;
+                padding: 1rem;
+            }
+            
+            .admin-tabs {
+                padding: 0.5rem 1rem;
+            }
+            
+            .tab-btn {
+                padding: 0.3rem 0.8rem;
+                font-size: 0.8rem;
+            }
         }
         
         @media (max-width: 480px) {
@@ -525,22 +724,6 @@
             .dashboard-header {
                 padding: 1rem;
             }
-        }
-        
-        /* ===== ANIMACIONES ===== */
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .order-card {
-            animation: slideIn 0.3s ease;
         }
     </style>
 </head>
@@ -581,8 +764,11 @@
                     </div>
                     <div class="right">
                         <span class="user-email" id="userEmail">admin@restaurant.com</span>
-                        <button class="btn-refresh" id="refreshBtn" title="Actualizar">
+                        <button class="btn-icon" id="refreshBtn" title="Actualizar">
                             <i class="fas fa-sync"></i>
+                        </button>
+                        <button class="btn-icon" id="generateQRNavBtn" title="Generar QR" style="background: #8e44ad;">
+                            <i class="fas fa-qrcode"></i>
                         </button>
                         <button class="btn-logout" id="logoutBtn">
                             <i class="fas fa-sign-out-alt"></i> Salir
@@ -590,60 +776,226 @@
                     </div>
                 </div>
 
-                <!-- Stats -->
-                <div class="stats-grid">
-                    <div class="stat-card orders">
-                        <div class="icon"><i class="fas fa-clipboard-list" style="color: #3498db;"></i></div>
-                        <div class="number" id="totalOrders">0</div>
-                        <div class="label">Total Pedidos</div>
+                <!-- Tabs -->
+                <div class="admin-tabs">
+                    <button class="tab-btn active" data-tab="orders">
+                        <i class="fas fa-clipboard-list"></i> Pedidos
+                    </button>
+                    <button class="tab-btn" data-tab="qr">
+                        <i class="fas fa-qrcode"></i> Generar QR
+                    </button>
+                    <button class="tab-btn" data-tab="menu">
+                        <i class="fas fa-utensils"></i> Menú
+                    </button>
+                    <button class="tab-btn" data-tab="sections">
+                        <i class="fas fa-tags"></i> Secciones
+                    </button>
+                </div>
+
+                <!-- Tab: Pedidos -->
+                <div id="tabOrders" class="tab-content active">
+                    <div class="stats-grid">
+                        <div class="stat-card orders">
+                            <div class="icon"><i class="fas fa-clipboard-list" style="color: #3498db;"></i></div>
+                            <div class="number" id="totalOrders">0</div>
+                            <div class="label">Total Pedidos</div>
+                        </div>
+                        <div class="stat-card pending">
+                            <div class="icon"><i class="fas fa-clock" style="color: #f39c12;"></i></div>
+                            <div class="number" id="pendingOrders">0</div>
+                            <div class="label">Pendientes</div>
+                        </div>
+                        <div class="stat-card items">
+                            <div class="icon"><i class="fas fa-utensils" style="color: #27ae60;"></i></div>
+                            <div class="number" id="totalItems">0</div>
+                            <div class="label">Platos</div>
+                        </div>
+                        <div class="stat-card sections">
+                            <div class="icon"><i class="fas fa-tags" style="color: #8e44ad;"></i></div>
+                            <div class="number" id="totalSections">0</div>
+                            <div class="label">Secciones</div>
+                        </div>
                     </div>
-                    <div class="stat-card pending">
-                        <div class="icon"><i class="fas fa-clock" style="color: #f39c12;"></i></div>
-                        <div class="number" id="pendingOrders">0</div>
-                        <div class="label">Pendientes</div>
-                    </div>
-                    <div class="stat-card items">
-                        <div class="icon"><i class="fas fa-utensils" style="color: #27ae60;"></i></div>
-                        <div class="number" id="totalItems">0</div>
-                        <div class="label">Platos</div>
-                    </div>
-                    <div class="stat-card sections">
-                        <div class="icon"><i class="fas fa-tags" style="color: #8e44ad;"></i></div>
-                        <div class="number" id="totalSections">0</div>
-                        <div class="label">Secciones</div>
+
+                    <div class="orders-section">
+                        <div class="header">
+                            <h3><i class="fas fa-clipboard-list"></i> Últimos Pedidos</h3>
+                            <div>
+                                <select id="filterStatus" class="filter-select">
+                                    <option value="all">Todos</option>
+                                    <option value="pending">⏳ Pendientes</option>
+                                    <option value="preparing">🔪 Preparando</option>
+                                    <option value="ready">✅ Listos</option>
+                                    <option value="delivered">📦 Entregados</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="ordersList">
+                            <div class="empty-state">
+                                <i class="fas fa-clipboard-list"></i>
+                                <p>No hay pedidos aún</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Orders -->
-                <div class="orders-section">
-                    <div class="header">
-                        <h3><i class="fas fa-clipboard-list"></i> Últimos Pedidos</h3>
-                        <div>
-                            <select id="filterStatus" class="filter-select">
-                                <option value="all">Todos</option>
-                                <option value="pending">⏳ Pendientes</option>
-                                <option value="preparing">🔪 Preparando</option>
-                                <option value="ready">✅ Listos</option>
-                                <option value="delivered">📦 Entregados</option>
-                            </select>
+                <!-- Tab: Generar QR -->
+                <div id="tabQR" class="tab-content">
+                    <div class="qr-generator-section">
+                        <div class="header">
+                            <h3><i class="fas fa-qrcode"></i> Generador de Códigos QR</h3>
+                            <p style="color: #666; font-size: 0.9rem;">Genera QR para que los clientes accedan a la carta digital</p>
+                        </div>
+                        
+                        <div class="qr-generator-container">
+                            <div class="qr-controls">
+                                <div class="form-group">
+                                    <label>Número de Mesa</label>
+                                    <input type="number" id="qrTableNumber" min="1" max="99" value="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Color del QR</label>
+                                    <input type="color" id="qrColor" value="#2c3e50">
+                                </div>
+                                <div class="form-group">
+                                    <label>Color de fondo</label>
+                                    <input type="color" id="qrBgColor" value="#ffffff">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tamaño</label>
+                                    <select id="qrSize">
+                                        <option value="200">200px</option>
+                                        <option value="300" selected>300px</option>
+                                        <option value="400">400px</option>
+                                        <option value="500">500px</option>
+                                    </select>
+                                </div>
+                                <button class="btn-primary" id="generateSingleQRBtn">
+                                    <i class="fas fa-qrcode"></i> Generar QR
+                                </button>
+                                <button class="btn-primary btn-success" id="downloadQRBtn">
+                                    <i class="fas fa-download"></i> Descargar QR
+                                </button>
+                                <button class="btn-primary" id="generateAllQRBtn" style="background: #8e44ad;">
+                                    <i class="fas fa-file-pdf"></i> Generar Todos los QR
+                                </button>
+                            </div>
+                            <div class="qr-preview">
+                                <div id="qrPreviewContainer">
+                                    <img id="qrImage" src="" alt="Código QR" style="display: none;">
+                                    <div id="qrPlaceholder">
+                                        <i class="fas fa-qrcode"></i>
+                                        <p>Genera un código QR para tu mesa</p>
+                                    </div>
+                                </div>
+                                <div id="qrInfo" style="display: none;">
+                                    <p><strong>Mesa:</strong> <span id="qrInfoTable">-</span></p>
+                                    <p><strong>URL:</strong> <span id="qrInfoUrl">-</span></p>
+                                    <p><strong>Estado:</strong> <span id="qrInfoStatus" style="color: #27ae60;">✅ Listo para usar</span></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div id="ordersList">
-                        <div class="empty-state">
-                            <i class="fas fa-clipboard-list"></i>
-                            <p>No hay pedidos aún</p>
+                </div>
+
+                <!-- Tab: Menú (simplificado) -->
+                <div id="tabMenu" class="tab-content">
+                    <div class="orders-section">
+                        <div class="header">
+                            <h3><i class="fas fa-utensils"></i> Gestión del Menú</h3>
+                            <button class="btn-primary" id="addItemBtn" style="width: auto;">
+                                <i class="fas fa-plus"></i> Nuevo Plato
+                            </button>
+                        </div>
+                        <div id="itemsList">
+                            <div class="empty-state">
+                                <i class="fas fa-utensils"></i>
+                                <p>No hay platos en el menú</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Secciones (simplificado) -->
+                <div id="tabSections" class="tab-content">
+                    <div class="orders-section">
+                        <div class="header">
+                            <h3><i class="fas fa-tags"></i> Gestión de Secciones</h3>
+                            <button class="btn-primary" id="addSectionBtn" style="width: auto;">
+                                <i class="fas fa-plus"></i> Nueva Sección
+                            </button>
+                        </div>
+                        <div id="sectionsList">
+                            <div class="empty-state">
+                                <i class="fas fa-tags"></i>
+                                <p>No hay secciones</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ===== MODAL DETALLE ===== -->
+        <!-- ===== MODALES ===== -->
         <div class="modal-overlay" id="orderModal">
             <div class="modal-content">
                 <button class="modal-close" id="closeModal">&times;</button>
                 <h2 style="margin-bottom: 1rem;"><i class="fas fa-receipt"></i> Detalle del Pedido</h2>
                 <div id="orderDetail"></div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="sectionModal">
+            <div class="modal-content">
+                <button class="modal-close" id="closeSectionModal">&times;</button>
+                <h2 id="sectionModalTitle">Nueva Sección</h2>
+                <form id="sectionForm">
+                    <div class="form-group">
+                        <label>Nombre *</label>
+                        <input type="text" id="sectionName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Icono</label>
+                        <input type="text" id="sectionIcon" placeholder="fa-pizza-slice">
+                    </div>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="itemModal">
+            <div class="modal-content">
+                <button class="modal-close" id="closeItemModal">&times;</button>
+                <h2 id="itemModalTitle">Nuevo Plato</h2>
+                <form id="itemForm">
+                    <div class="form-group">
+                        <label>Sección *</label>
+                        <select id="itemSectionSelect" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre *</label>
+                        <input type="text" id="itemName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="itemDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio *</label>
+                        <input type="number" id="itemPrice" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>URL de Imagen</label>
+                        <input type="url" id="itemImage" placeholder="https://ejemplo.com/imagen.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="itemAvailable" checked>
+                            Disponible
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </form>
             </div>
         </div>
     </div>
