@@ -1,4 +1,4 @@
-// ===== ADMIN.JS - VERSIÓN CON DEBUG =====
+// ===== ADMIN.JS - VERSIÓN COMPLETA =====
 import { 
     signIn,
     signOut,
@@ -18,105 +18,35 @@ import {
 
 console.log('🚀 Admin panel iniciado')
 
+// ===== ESTADO =====
+const state = {
+    user: null,
+    sections: [],
+    items: [],
+    orders: [],
+    editingSection: null,
+    editingItem: null,
+    filterStatus: 'all'
+}
+
 // ===== DOM ELEMENTS =====
-const loginSection = document.getElementById('loginSection')
-const dashboardSection = document.getElementById('dashboardSection')
-const loginForm = document.getElementById('loginForm')
-const adminEmail = document.getElementById('adminEmail')
-const adminPassword = document.getElementById('adminPassword')
-const logoutBtn = document.getElementById('logoutBtn')
-
-console.log('Elementos DOM:', {
-    loginSection: !!loginSection,
-    dashboardSection: !!dashboardSection,
-    loginForm: !!loginForm,
-    adminEmail: !!adminEmail,
-    adminPassword: !!adminPassword,
-    logoutBtn: !!logoutBtn
-})
-
-// ===== AUTENTICACIÓN =====
-const checkAuth = async () => {
-    try {
-        console.log('🔍 Verificando autenticación...')
-        const result = await getCurrentUser()
-        console.log('📊 Resultado getCurrentUser:', result)
-        
-        if (result.success && result.data) {
-            console.log('✅ Usuario autenticado:', result.data.email)
-            // Mostrar dashboard
-            if (loginSection) loginSection.style.display = 'none'
-            if (dashboardSection) dashboardSection.style.display = 'block'
-            console.log('📊 Dashboard mostrado')
-            
-            // Cargar datos si existen las funciones
-            if (typeof loadData === 'function') {
-                await loadData()
-            }
-        } else {
-            console.log('❌ No autenticado, mostrando login')
-            if (loginSection) loginSection.style.display = 'flex'
-            if (dashboardSection) dashboardSection.style.display = 'none'
-        }
-    } catch (error) {
-        console.error('❌ Error en checkAuth:', error)
-        if (loginSection) loginSection.style.display = 'flex'
-        if (dashboardSection) dashboardSection.style.display = 'none'
-    }
+const $ = (id) => document.getElementById(id)
+const elements = {
+    loginSection: $('loginSection'),
+    dashboardSection: $('dashboardSection'),
+    loginForm: $('loginForm'),
+    adminEmail: $('adminEmail'),
+    adminPassword: $('adminPassword'),
+    logoutBtn: $('logoutBtn'),
+    userEmail: $('userEmail'),
+    totalOrders: $('totalOrders'),
+    pendingOrders: $('pendingOrders'),
+    totalItems: $('totalItems'),
+    totalSections: $('totalSections'),
+    recentOrders: $('recentOrders')
 }
 
-// ===== LOGIN =====
-if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault()
-        console.log('📝 Intentando login...')
-        
-        const email = adminEmail.value
-        const password = adminPassword.value
-        
-        console.log('Email:', email)
-        
-        try {
-            const result = await signIn(email, password)
-            console.log('📊 Resultado login:', result)
-            
-            if (result.success) {
-                console.log('✅ Login exitoso!')
-                console.log('Usuario:', result.data.user.email)
-                
-                // Ocultar login y mostrar dashboard
-                loginSection.style.display = 'none'
-                dashboardSection.style.display = 'block'
-                console.log('📊 Dashboard debería estar visible')
-                
-                // Mostrar notificación
-                showNotification('✅ Sesión iniciada correctamente', 'success')
-                
-                // Cargar datos
-                if (typeof loadData === 'function') {
-                    await loadData()
-                }
-            } else {
-                console.error('❌ Error en login:', result.error)
-                showNotification('❌ Error: ' + result.error, 'error')
-            }
-        } catch (error) {
-            console.error('❌ Error en login:', error)
-            showNotification('❌ Error: ' + error.message, 'error')
-        }
-    })
-}
-
-// ===== LOGOUT =====
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-        console.log('👋 Cerrando sesión...')
-        await signOut()
-        loginSection.style.display = 'flex'
-        dashboardSection.style.display = 'none'
-        showNotification('👋 Sesión cerrada', 'info')
-    })
-}
+console.log('Elementos encontrados:', Object.keys(elements).filter(k => elements[k]))
 
 // ===== NOTIFICACIONES =====
 const showNotification = (message, type = 'success') => {
@@ -151,149 +81,310 @@ const showNotification = (message, type = 'success') => {
     }, 4000)
 }
 
-// ===== FUNCIONES DE CARGA (simplificadas para prueba) =====
-const loadData = async () => {
+// ===== AUTENTICACIÓN =====
+const checkAuth = async () => {
     try {
-        console.log('📥 Cargando datos...')
-        // Intentar cargar secciones
-        const sectionsResult = await getMenuSections()
-        if (sectionsResult.success) {
-            console.log(`📂 Secciones cargadas: ${sectionsResult.data?.length || 0}`)
-        }
+        console.log('🔍 Verificando autenticación...')
+        const result = await getCurrentUser()
+        console.log('📊 Resultado:', result)
         
-        const itemsResult = await getMenuItems()
-        if (itemsResult.success) {
-            console.log(`🍽️ Items cargados: ${itemsResult.data?.length || 0}`)
+        if (result.success && result.data) {
+            state.user = result.data
+            console.log('✅ Usuario autenticado:', state.user.email)
+            if (elements.userEmail) {
+                elements.userEmail.textContent = state.user.email
+            }
+            showDashboard()
+            await loadAllData()
+            // Actualizar cada 30 segundos
+            setInterval(loadOrders, 30000)
+        } else {
+            console.log('❌ No autenticado')
+            showLogin()
         }
-        
-        const ordersResult = await getOrders()
-        if (ordersResult.success) {
-            console.log(`📦 Pedidos cargados: ${ordersResult.data?.length || 0}`)
-        }
-        
-        console.log('✅ Datos cargados correctamente')
     } catch (error) {
-        console.error('❌ Error cargando datos:', error)
+        console.error('❌ Error en checkAuth:', error)
+        showLogin()
     }
 }
 
-// ===== AGREGAR ESTILOS =====
+const showLogin = () => {
+    if (elements.loginSection) {
+        elements.loginSection.style.display = 'flex'
+    }
+    if (elements.dashboardSection) {
+        elements.dashboardSection.style.display = 'none'
+    }
+}
+
+const showDashboard = () => {
+    if (elements.loginSection) {
+        elements.loginSection.style.display = 'none'
+    }
+    if (elements.dashboardSection) {
+        elements.dashboardSection.style.display = 'block'
+    }
+    console.log('📊 Dashboard visible')
+}
+
+// ===== LOGIN =====
+if (elements.loginForm) {
+    elements.loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        console.log('📝 Intentando login...')
+        
+        const email = elements.adminEmail.value
+        const password = elements.adminPassword.value
+        
+        try {
+            const result = await signIn(email, password)
+            console.log('📊 Resultado login:', result)
+            
+            if (result.success) {
+                state.user = result.data.user
+                console.log('✅ Login exitoso!')
+                if (elements.userEmail) {
+                    elements.userEmail.textContent = state.user.email
+                }
+                showDashboard()
+                await loadAllData()
+                elements.loginForm.reset()
+                showNotification('✅ Sesión iniciada correctamente', 'success')
+            } else {
+                console.error('❌ Error:', result.error)
+                showNotification('❌ Error: ' + result.error, 'error')
+            }
+        } catch (error) {
+            console.error('❌ Error:', error)
+            showNotification('❌ Error: ' + error.message, 'error')
+        }
+    })
+}
+
+// ===== LOGOUT =====
+if (elements.logoutBtn) {
+    elements.logoutBtn.addEventListener('click', async () => {
+        await signOut()
+        state.user = null
+        showLogin()
+        showNotification('👋 Sesión cerrada', 'info')
+    })
+}
+
+// ===== CARGA DE DATOS =====
+const loadAllData = async () => {
+    console.log('📥 Cargando todos los datos...')
+    await Promise.all([
+        loadOrders(),
+        loadSections(),
+        loadItems()
+    ])
+    console.log('✅ Todos los datos cargados')
+}
+
+const loadOrders = async () => {
+    try {
+        console.log('📦 Cargando pedidos...')
+        const result = await getOrders()
+        console.log('📊 Resultado pedidos:', result)
+        
+        if (result.success) {
+            state.orders = result.data || []
+            console.log(`📦 Pedidos cargados: ${state.orders.length}`)
+            renderOrders()
+            updateStats()
+        } else {
+            console.error('❌ Error cargando pedidos:', result.error)
+        }
+    } catch (error) {
+        console.error('❌ Error:', error)
+    }
+}
+
+const loadSections = async () => {
+    try {
+        console.log('📂 Cargando secciones...')
+        const result = await getMenuSections()
+        if (result.success) {
+            state.sections = result.data || []
+            console.log(`📂 Secciones cargadas: ${state.sections.length}`)
+            if (elements.totalSections) {
+                elements.totalSections.textContent = state.sections.length
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error:', error)
+    }
+}
+
+const loadItems = async () => {
+    try {
+        console.log('🍽️ Cargando items...')
+        const result = await getMenuItems()
+        if (result.success) {
+            state.items = result.data || []
+            console.log(`🍽️ Items cargados: ${state.items.length}`)
+            if (elements.totalItems) {
+                elements.totalItems.textContent = state.items.length
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error:', error)
+    }
+}
+
+// ===== ACTUALIZAR ESTADÍSTICAS =====
+const updateStats = () => {
+    if (elements.totalOrders) {
+        elements.totalOrders.textContent = state.orders.length
+    }
+    
+    const pending = state.orders.filter(o => o.status === 'pending' || o.status === 'preparing').length
+    if (elements.pendingOrders) {
+        elements.pendingOrders.textContent = pending
+    }
+}
+
+// ===== RENDERIZAR PEDIDOS =====
+const renderOrders = () => {
+    if (!elements.recentOrders) {
+        console.warn('⚠️ elements.recentOrders no encontrado')
+        return
+    }
+    
+    if (state.orders.length === 0) {
+        elements.recentOrders.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #999;">
+                <i class="fas fa-clipboard-list" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                <p>No hay pedidos aún</p>
+            </div>
+        `
+        return
+    }
+    
+    // Mostrar últimos 10 pedidos
+    const recent = state.orders.slice(0, 10)
+    
+    elements.recentOrders.innerHTML = recent.map(order => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+                <strong>#${order.id}</strong>
+                <span style="margin: 0 0.5rem; color: #666;">Mesa ${order.table_number || 'N/A'}</span>
+                <span style="color: #666; font-size: 0.9rem;">${order.customer_name || 'Cliente'}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span style="font-weight: bold; color: #e74c3c;">$${Number(order.total).toFixed(2)}</span>
+                <span style="padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; background: ${getStatusColor(order.status)}; color: white;">
+                    ${getStatusText(order.status)}
+                </span>
+                <select class="order-status-select" data-id="${order.id}" style="padding: 0.2rem 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>⏳ Pendiente</option>
+                    <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>🔪 Preparando</option>
+                    <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>✅ Listo</option>
+                    <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>📦 Entregado</option>
+                </select>
+                <button class="btn-delete-order" data-id="${order.id}" style="padding: 0.2rem 0.5rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('')
+    
+    // Event listeners para cambiar estado
+    document.querySelectorAll('.order-status-select').forEach(select => {
+        select.addEventListener('change', async (e) => {
+            const id = parseInt(select.dataset.id)
+            const status = select.value
+            await updateOrderStatusHandler(id, status)
+        })
+    })
+    
+    // Event listeners para eliminar
+    document.querySelectorAll('.btn-delete-order').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = parseInt(btn.dataset.id)
+            await deleteOrderHandler(id)
+        })
+    })
+}
+
+// ===== FUNCIONES DE UTILIDAD =====
+const getStatusText = (status) => {
+    const map = {
+        'pending': 'Pendiente',
+        'preparing': 'Preparando',
+        'ready': 'Listo',
+        'delivered': 'Entregado'
+    }
+    return map[status] || status
+}
+
+const getStatusColor = (status) => {
+    const map = {
+        'pending': '#f39c12',
+        'preparing': '#3498db',
+        'ready': '#27ae60',
+        'delivered': '#95a5a6'
+    }
+    return map[status] || '#95a5a6'
+}
+
+// ===== ACTUALIZAR ESTADO =====
+const updateOrderStatusHandler = async (id, status) => {
+    try {
+        const result = await updateOrderStatus(id, status)
+        if (result.success) {
+            showNotification(`✅ Pedido #${id} actualizado a ${getStatusText(status)}`, 'success')
+            await loadOrders()
+        } else {
+            showNotification('❌ Error: ' + result.error, 'error')
+        }
+    } catch (error) {
+        showNotification('❌ Error: ' + error.message, 'error')
+    }
+}
+
+// ===== ELIMINAR PEDIDO =====
+const deleteOrderHandler = async (id) => {
+    if (!confirm(`¿Estás seguro de eliminar el pedido #${id}?`)) return
+    
+    try {
+        const result = await deleteOrder(id)
+        if (result.success) {
+            showNotification(`✅ Pedido #${id} eliminado`, 'success')
+            await loadOrders()
+        } else {
+            showNotification('❌ Error: ' + result.error, 'error')
+        }
+    } catch (error) {
+        showNotification('❌ Error: ' + error.message, 'error')
+    }
+}
+
+// ===== ESTILOS ADICIONALES =====
 const styles = document.createElement('style')
 styles.textContent = `
     @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateX(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
     }
     
-    #dashboardSection {
-        background: #f5f6fa;
-        min-height: 100vh;
-        padding: 20px;
+    .status-pending { background: #f39c12; color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
+    .status-preparing { background: #3498db; color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
+    .status-ready { background: #27ae60; color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
+    .status-delivered { background: #95a5a6; color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
+    
+    .btn-delete-order:hover {
+        background: #c0392b !important;
+        transform: scale(1.05);
     }
     
-    .dashboard-container {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    
-    .dashboard-header {
-        background: white;
-        padding: 1.5rem 2rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        margin-bottom: 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    
-    .dashboard-header h2 {
-        margin: 0;
-        color: #2c3e50;
-    }
-    
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.5rem;
-    }
-    
-    .dashboard-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        text-align: center;
-        transition: transform 0.3s ease;
-    }
-    
-    .dashboard-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .dashboard-card .icon {
-        font-size: 3rem;
-        color: #3498db;
-        margin-bottom: 0.5rem;
-    }
-    
-    .dashboard-card .number {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #2c3e50;
-    }
-    
-    .dashboard-card .label {
-        color: #666;
-        font-size: 0.9rem;
-        margin-top: 0.3rem;
-    }
-    
-    .btn-logout-dashboard {
-        padding: 0.5rem 1.5rem;
-        background: #e74c3c;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-logout-dashboard:hover {
-        background: #c0392b;
-    }
-    
-    @media (max-width: 768px) {
-        .dashboard-header {
-            flex-direction: column;
-            text-align: center;
-        }
-        
-        .dashboard-grid {
-            grid-template-columns: 1fr;
-        }
+    .order-status-select:hover {
+        border-color: #3498db;
     }
 `
 document.head.appendChild(styles)
 
 // ===== INICIAR =====
-console.log('🔄 Iniciando verificación de autenticación...')
+console.log('🔄 Iniciando...')
 checkAuth()
-
-// Exponer funciones para debugging
-window.debug = {
-    signIn,
-    signOut,
-    getCurrentUser,
-    checkAuth,
-    loadData
-}
