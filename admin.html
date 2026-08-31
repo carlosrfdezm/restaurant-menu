@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Dashboard</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <div id="adminApp">
+        <!-- Login -->
+        <div id="loginSection" class="login-container">
+            <div class="login-box">
+                <h1>🔐 Admin Panel</h1>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <input type="email" id="adminEmail" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="adminPassword" placeholder="Contraseña" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Iniciar Sesión</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboardSection" style="display:none;">
+            <nav class="admin-nav">
+                <div class="nav-content">
+                    <h2>📊 Dashboard</h2>
+                    <div class="nav-actions">
+                        <button id="logoutBtn" class="btn-secondary">
+                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="admin-content">
+                <!-- Gestión de Pedidos -->
+                <section class="admin-section">
+                    <h3>📦 Pedidos Pendientes</h3>
+                    <div id="ordersList" class="orders-list">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </section>
+
+                <!-- Gestión de Secciones -->
+                <section class="admin-section">
+                    <div class="section-header">
+                        <h3>📂 Secciones</h3>
+                        <button class="btn-primary" id="addSectionBtn">
+                            <i class="fas fa-plus"></i> Nueva Sección
+                        </button>
+                    </div>
+                    <div id="sectionsList" class="admin-grid">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </section>
+
+                <!-- Gestión de Items -->
+                <section class="admin-section">
+                    <div class="section-header">
+                        <h3>🍽️ Platos</h3>
+                        <button class="btn-primary" id="addItemBtn">
+                            <i class="fas fa-plus"></i> Nuevo Plato
+                        </button>
+                    </div>
+                    <div id="itemsList" class="admin-grid">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Modales -->
+        <div class="modal" id="sectionModal">
+            <div class="modal-content">
+                <span class="modal-close">&times;</span>
+                <h2 id="sectionModalTitle">Nueva Sección</h2>
+                <form id="sectionForm">
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" id="sectionName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Icono (clase FontAwesome)</label>
+                        <input type="text" id="sectionIcon" placeholder="fa-pizza-slice">
+                    </div>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal" id="itemModal">
+            <div class="modal-content">
+                <span class="modal-close">&times;</span>
+                <h2 id="itemModalTitle">Nuevo Plato</h2>
+                <form id="itemForm">
+                    <div class="form-group">
+                        <label>Sección</label>
+                        <select id="itemSection" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" id="itemName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="itemDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio</label>
+                        <input type="number" id="itemPrice" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>URL de Imagen</label>
+                        <input type="url" id="itemImage" placeholder="https://ejemplo.com/imagen.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="itemAvailable" checked>
+                            Disponible
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal" id="orderDetailModal">
+            <div class="modal-content">
+                <span class="modal-close">&times;</span>
+                <h2>Detalle del Pedido</h2>
+                <div id="orderDetail"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "https://esm.sh/@supabase/supabase-js@2.39.0": "https://esm.sh/@supabase/supabase-js@2.39.0"
+            }
+        }
+    </script>
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>
