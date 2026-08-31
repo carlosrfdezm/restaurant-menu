@@ -64,55 +64,75 @@ const elements = {
 
 // ===== AUTENTICACIÓN =====
 const checkAuth = async () => {
-    const result = await getCurrentUser()
-    if (result.success && result.data) {
-        state.user = result.data
-        showDashboard()
-        loadData()
-        // Actualizar cada 30 segundos
-        setInterval(loadOrders, 30000)
-    } else {
+    try {
+        console.log('Verificando autenticación...')
+        const result = await getCurrentUser()
+        console.log('Resultado getCurrentUser:', result)
+        
+        if (result.success && result.data) {
+            state.user = result.data
+            console.log('Usuario autenticado:', state.user.email)
+            showDashboard()
+            loadData()
+            // Actualizar cada 30 segundos
+            setInterval(loadOrders, 30000)
+        } else {
+            console.log('No autenticado, mostrando login')
+            showLogin()
+        }
+    } catch (error) {
+        console.error('Error en checkAuth:', error)
         showLogin()
     }
 }
 
 const showLogin = () => {
-    elements.loginSection.style.display = 'flex'
-    elements.dashboardSection.style.display = 'none'
+    if (elements.loginSection) elements.loginSection.style.display = 'flex'
+    if (elements.dashboardSection) elements.dashboardSection.style.display = 'none'
 }
 
 const showDashboard = () => {
-    elements.loginSection.style.display = 'none'
-    elements.dashboardSection.style.display = 'block'
+    if (elements.loginSection) elements.loginSection.style.display = 'none'
+    if (elements.dashboardSection) elements.dashboardSection.style.display = 'block'
 }
 
-elements.loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault()
-    const email = elements.adminEmail.value
-    const password = elements.adminPassword.value
-    
-    try {
-        const result = await signIn(email, password)
-        if (result.success) {
-            state.user = result.data.user
-            showDashboard()
-            loadData()
-            elements.loginForm.reset()
-            showNotification('✅ Sesión iniciada correctamente', 'success')
-        } else {
-            showNotification('❌ Error: ' + result.error, 'error')
+// ===== LOGIN =====
+if (elements.loginForm) {
+    elements.loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        const email = elements.adminEmail.value
+        const password = elements.adminPassword.value
+        
+        try {
+            console.log('Intentando login...')
+            const result = await signIn(email, password)
+            console.log('Resultado login:', result)
+            
+            if (result.success) {
+                state.user = result.data.user
+                showDashboard()
+                await loadData()
+                elements.loginForm.reset()
+                showNotification('✅ Sesión iniciada correctamente', 'success')
+            } else {
+                showNotification('❌ Error: ' + result.error, 'error')
+            }
+        } catch (error) {
+            console.error('Error en login:', error)
+            showNotification('❌ Error: ' + error.message, 'error')
         }
-    } catch (error) {
-        showNotification('❌ Error: ' + error.message, 'error')
-    }
-})
+    })
+}
 
-elements.logoutBtn.addEventListener('click', async () => {
-    await signOut()
-    state.user = null
-    showLogin()
-    showNotification('👋 Sesión cerrada', 'info')
-})
+// ===== LOGOUT =====
+if (elements.logoutBtn) {
+    elements.logoutBtn.addEventListener('click', async () => {
+        await signOut()
+        state.user = null
+        showLogin()
+        showNotification('👋 Sesión cerrada', 'info')
+    })
+}
 
 // ===== NOTIFICACIONES =====
 const showNotification = (message, type = 'success') => {
@@ -155,15 +175,18 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         
         const tab = btn.dataset.tab
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'))
-        document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active')
+        const target = document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)
+        if (target) target.classList.add('active')
     })
 })
 
 // ===== FILTRO DE PEDIDOS =====
-elements.filterStatus.addEventListener('change', (e) => {
-    state.filterStatus = e.target.value
-    renderOrders()
-})
+if (elements.filterStatus) {
+    elements.filterStatus.addEventListener('change', (e) => {
+        state.filterStatus = e.target.value
+        renderOrders()
+    })
+}
 
 // ===== CARGA DE DATOS =====
 const loadData = async () => {
@@ -214,6 +237,8 @@ const loadItems = async () => {
 
 // ===== RENDERIZAR PEDIDOS =====
 const renderOrders = () => {
+    if (!elements.ordersList) return
+    
     let filtered = state.orders
     if (state.filterStatus !== 'all') {
         filtered = filtered.filter(o => o.status === state.filterStatus)
@@ -230,7 +255,7 @@ const renderOrders = () => {
     }
     
     elements.ordersList.innerHTML = filtered.map(order => `
-        <div class="order-card" data-id="${order.id}">
+        <div class="order-card" data-id="${order.id}" data-status="${order.status}">
             <div class="order-info">
                 <div class="order-header">
                     <span class="order-id">#${order.id}</span>
@@ -277,6 +302,7 @@ const renderOrders = () => {
 }
 
 const updateBadge = () => {
+    if (!elements.pendingBadge) return
     const pending = state.orders.filter(o => o.status === 'pending' || o.status === 'preparing').length
     elements.pendingBadge.textContent = pending
     elements.pendingBadge.style.display = pending > 0 ? 'inline-block' : 'none'
@@ -309,6 +335,8 @@ const getStatusText = (status) => {
 
 // ===== VER DETALLE DEL PEDIDO =====
 const showOrderDetail = (order) => {
+    if (!elements.orderDetail || !elements.orderModal) return
+    
     const itemsHTML = order.items?.map(item => `
         <div class="order-item-detail">
             <span>${item.quantity}x ${item.name}</span>
@@ -337,6 +365,8 @@ const showOrderDetail = (order) => {
 
 // ===== RENDERIZAR SECCIONES =====
 const renderSections = () => {
+    if (!elements.sectionsList) return
+    
     if (state.sections.length === 0) {
         elements.sectionsList.innerHTML = `
             <div class="empty-state">
@@ -370,6 +400,8 @@ const renderSections = () => {
 
 // ===== RENDERIZAR ITEMS =====
 const renderItems = () => {
+    if (!elements.itemsList) return
+    
     if (state.items.length === 0) {
         elements.itemsList.innerHTML = `
             <div class="empty-state">
@@ -409,6 +441,7 @@ const renderItems = () => {
 
 // ===== POPULAR SELECT DE SECCIONES =====
 const populateSectionSelect = () => {
+    if (!elements.itemSection) return
     elements.itemSection.innerHTML = state.sections.map(s => `
         <option value="${s.id}">${s.name}</option>
     `).join('')
@@ -444,42 +477,46 @@ window.deleteSectionHandler = async (id) => {
     }
 }
 
-elements.addSectionBtn.addEventListener('click', () => {
-    state.editingSection = null
-    elements.sectionModalTitle.textContent = 'Nueva Sección'
-    elements.sectionForm.reset()
-    elements.sectionModal.classList.add('active')
-})
+if (elements.addSectionBtn) {
+    elements.addSectionBtn.addEventListener('click', () => {
+        state.editingSection = null
+        elements.sectionModalTitle.textContent = 'Nueva Sección'
+        elements.sectionForm.reset()
+        elements.sectionModal.classList.add('active')
+    })
+}
 
-elements.sectionForm.addEventListener('submit', async (e) => {
-    e.preventDefault()
-    
-    const data = {
-        name: elements.sectionName.value,
-        icon: elements.sectionIcon.value || 'fa-tag',
-        position: parseInt(elements.sectionPosition.value) || 1
-    }
-    
-    try {
-        let result
-        if (state.editingSection) {
-            result = await updateSection(state.editingSection, data)
-        } else {
-            result = await createSection(data)
+if (elements.sectionForm) {
+    elements.sectionForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        
+        const data = {
+            name: elements.sectionName.value,
+            icon: elements.sectionIcon.value || 'fa-tag',
+            position: parseInt(elements.sectionPosition.value) || 1
         }
         
-        if (result.success) {
-            showNotification('✅ Sección guardada', 'success')
-            elements.sectionModal.classList.remove('active')
-            await loadSections()
-            await loadItems()
-        } else {
-            showNotification('❌ Error: ' + result.error, 'error')
+        try {
+            let result
+            if (state.editingSection) {
+                result = await updateSection(state.editingSection, data)
+            } else {
+                result = await createSection(data)
+            }
+            
+            if (result.success) {
+                showNotification('✅ Sección guardada', 'success')
+                elements.sectionModal.classList.remove('active')
+                await loadSections()
+                await loadItems()
+            } else {
+                showNotification('❌ Error: ' + result.error, 'error')
+            }
+        } catch (error) {
+            showNotification('❌ Error: ' + error.message, 'error')
         }
-    } catch (error) {
-        showNotification('❌ Error: ' + error.message, 'error')
-    }
-})
+    })
+}
 
 // ===== CRUD: ITEMS =====
 window.editItem = (id) => {
@@ -514,46 +551,50 @@ window.deleteItemHandler = async (id) => {
     }
 }
 
-elements.addItemBtn.addEventListener('click', () => {
-    state.editingItem = null
-    elements.itemModalTitle.textContent = 'Nuevo Plato'
-    elements.itemForm.reset()
-    elements.itemAvailable.checked = true
-    elements.itemModal.classList.add('active')
-})
+if (elements.addItemBtn) {
+    elements.addItemBtn.addEventListener('click', () => {
+        state.editingItem = null
+        elements.itemModalTitle.textContent = 'Nuevo Plato'
+        elements.itemForm.reset()
+        elements.itemAvailable.checked = true
+        elements.itemModal.classList.add('active')
+    })
+}
 
-elements.itemForm.addEventListener('submit', async (e) => {
-    e.preventDefault()
-    
-    const data = {
-        section_id: parseInt(elements.itemSection.value),
-        name: elements.itemName.value,
-        description: elements.itemDescription.value || '',
-        price: parseFloat(elements.itemPrice.value),
-        image_url: elements.itemImage.value || null,
-        is_available: elements.itemAvailable.checked,
-        position: parseInt(elements.itemPosition.value) || 1
-    }
-    
-    try {
-        let result
-        if (state.editingItem) {
-            result = await updateItem(state.editingItem, data)
-        } else {
-            result = await createItem(data)
+if (elements.itemForm) {
+    elements.itemForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        
+        const data = {
+            section_id: parseInt(elements.itemSection.value),
+            name: elements.itemName.value,
+            description: elements.itemDescription.value || '',
+            price: parseFloat(elements.itemPrice.value),
+            image_url: elements.itemImage.value || null,
+            is_available: elements.itemAvailable.checked,
+            position: parseInt(elements.itemPosition.value) || 1
         }
         
-        if (result.success) {
-            showNotification('✅ Plato guardado', 'success')
-            elements.itemModal.classList.remove('active')
-            await loadItems()
-        } else {
-            showNotification('❌ Error: ' + result.error, 'error')
+        try {
+            let result
+            if (state.editingItem) {
+                result = await updateItem(state.editingItem, data)
+            } else {
+                result = await createItem(data)
+            }
+            
+            if (result.success) {
+                showNotification('✅ Plato guardado', 'success')
+                elements.itemModal.classList.remove('active')
+                await loadItems()
+            } else {
+                showNotification('❌ Error: ' + result.error, 'error')
+            }
+        } catch (error) {
+            showNotification('❌ Error: ' + error.message, 'error')
         }
-    } catch (error) {
-        showNotification('❌ Error: ' + error.message, 'error')
-    }
-})
+    })
+}
 
 // ===== CERRAR MODALES =====
 document.querySelectorAll('.modal-close').forEach(close => {
@@ -569,10 +610,12 @@ document.querySelectorAll('.modal').forEach(modal => {
 })
 
 // ===== REFRESH =====
-elements.refreshBtn.addEventListener('click', () => {
-    loadData()
-    showNotification('🔄 Actualizado', 'info')
-})
+if (elements.refreshBtn) {
+    elements.refreshBtn.addEventListener('click', () => {
+        loadData()
+        showNotification('🔄 Actualizado', 'info')
+    })
+}
 
 // ===== INICIO =====
 // Agregar estilos para animaciones
@@ -806,4 +849,5 @@ style.textContent = `
 document.head.appendChild(style)
 
 // ===== INICIAR =====
+console.log('Iniciando admin panel...')
 checkAuth()
