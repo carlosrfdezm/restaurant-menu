@@ -1000,12 +1000,6 @@ style.textContent = `
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 `
-document.head.appendChild(style)
-
-// ============================================
-// INICIAR
-// ============================================
-
 console.log('🚀 Iniciando aplicación...')
 loadData()
 
@@ -1241,3 +1235,9 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+document.head.appendChild(style)
+
+// ============================================
+// INICIAR
+// ============================================
+
