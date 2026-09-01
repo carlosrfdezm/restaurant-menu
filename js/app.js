@@ -97,7 +97,7 @@ const showNotification = (message, type = 'success') => {
 }
 
 // ============================================
-// FUNCIONES DE CARGA DE DATOS
+// CARGA DE DATOS
 // ============================================
 
 const loadData = async () => {
@@ -134,8 +134,6 @@ const loadData = async () => {
         state.isLoading = false
         
         initQRDetection()
-        
-        // Verificar si hay seguimiento activo
         checkInitialTracking()
         
     } catch (error) {
@@ -350,7 +348,16 @@ const initQRDetection = () => {
 let trackingInterval = null;
 let currentOrderId = null;
 
-// Guardar el ID del pedido
+const getStatusText = (status) => {
+    const map = {
+        'pending': 'Pendiente',
+        'preparing': 'Preparando',
+        'ready': 'Listo',
+        'delivered': 'Entregado'
+    }
+    return map[status] || status
+}
+
 const saveTrackingOrder = (orderId, table, total) => {
     if (orderId) {
         const trackingData = {
@@ -365,12 +372,10 @@ const saveTrackingOrder = (orderId, table, total) => {
         url.searchParams.set('tracking', orderId);
         window.history.replaceState({}, '', url);
         
-        // Mostrar el botón
         updateTrackingButton();
     }
-};
+}
 
-// Cargar el seguimiento guardado
 const loadTrackingOrder = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const trackingId = urlParams.get('tracking');
@@ -399,55 +404,110 @@ const loadTrackingOrder = () => {
     }
     
     return null;
-};
+}
 
-// Restaurar seguimiento
-const restoreTracking = async () => {
-    const tracking = loadTrackingOrder();
-    if (!tracking) {
-        showNotification('No hay pedido activo para seguir', 'warning');
-        updateTrackingButton();
-        return false;
-    }
-    
-    try {
-        const { data, error } = await supabase
-            .from('orders')
-            .select('id, table_number, total, status')
-            .eq('id', tracking.orderId)
-            .single();
-        
-        if (error || !data) {
-            clearTracking();
-            showNotification('El pedido ya no está disponible', 'warning');
-            return false;
-        }
-        
-        showTrackingPanel(data.id, data.table_number, data.total);
-        showNotification('📱 Reanudando seguimiento del pedido #' + data.id, 'info');
-        updateTrackingButton();
-        return true;
-    } catch (error) {
-        console.error('Error:', error);
-        updateTrackingButton();
-        return false;
-    }
-};
-
-// Limpiar el seguimiento
 const clearTracking = () => {
     localStorage.removeItem('trackingOrder');
     const url = new URL(window.location);
     url.searchParams.delete('tracking');
     window.history.replaceState({}, '', url);
     updateTrackingButton();
-};
+}
 
-// Mostrar panel de seguimiento
-const showTrackingPanel = (orderId, table, total) => {
+const generateTicket = (order) => {
+    if (!order) return;
+    
+    const date = new Date(order.created_at);
+    document.getElementById('trackingDate').textContent = date.toLocaleString();
+    
+    const itemsHTML = order.items.map(item => `
+        <div class="ticket-item">
+            <span>${item.quantity}x ${item.name}</span>
+            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+        </div>
+    `).join('');
+    
+    const ticketHTML = `
+        <div class="ticket-print-area" id="ticketPrintArea">
+            <div class="ticket-content">
+                <div class="ticket-header">
+                    <h3>🍽️ Carta Digital</h3>
+                    <p>Pedido #${order.id}</p>
+                    <p>Mesa ${order.table_number || 'N/A'}</p>
+                    <p>${date.toLocaleString()}</p>
+                </div>
+                <div class="ticket-items">
+                    ${itemsHTML}
+                </div>
+                <div class="ticket-total">
+                    <span>TOTAL</span>
+                    <span>$${Number(order.total).toFixed(2)}</span>
+                </div>
+                <div class="ticket-footer">
+                    <p>¡Gracias por tu visita!</p>
+                    <p style="font-size: 0.7rem;">Estado: ${getStatusText(order.status)}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const trackingItems = document.getElementById('trackingItems');
+    if (trackingItems) {
+        trackingItems.innerHTML = ticketHTML;
+    }
+}
+
+const downloadTicketAsText = () => {
+    const orderId = document.getElementById('trackingOrderId').textContent;
+    if (orderId === '-') {
+        showNotification('No hay pedido activo', 'warning');
+        return;
+    }
+    
+    const ticketContent = document.querySelector('.ticket-content');
+    if (!ticketContent) return;
+    
+    const lines = [];
+    const elements2 = ticketContent.querySelectorAll('*');
+    elements2.forEach(el => {
+        if (el.textContent && el.textContent.trim()) {
+            const text = el.textContent.trim();
+            if (text && !lines.includes(text)) {
+                lines.push(text);
+            }
+        }
+    });
+    
+    const textContent = lines.join('\n');
+    const blob = new Blob([textContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ticket-pedido-${orderId}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showNotification('✅ Ticket descargado como texto', 'success');
+}
+
+const showTrackingPanel = async (orderId, table, total) => {
     currentOrderId = orderId;
     
     saveTrackingOrder(orderId, table, total);
+    
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', orderId)
+            .single();
+        
+        if (data) {
+            generateTicket(data);
+        }
+    } catch (error) {
+        console.error('Error obteniendo datos del pedido:', error);
+    }
     
     document.getElementById('trackingOrderId').textContent = orderId;
     document.getElementById('trackingTable').textContent = table;
@@ -459,9 +519,8 @@ const showTrackingPanel = (orderId, table, total) => {
     trackingInterval = setInterval(checkOrderStatus, 5000);
     checkOrderStatus();
     updateTrackingButton();
-};
+}
 
-// Cerrar panel de seguimiento
 document.getElementById('closeTracking')?.addEventListener('click', () => {
     document.getElementById('orderTrackingPanel').style.display = 'none';
     document.getElementById('overlay').classList.remove('active');
@@ -469,36 +528,32 @@ document.getElementById('closeTracking')?.addEventListener('click', () => {
         clearInterval(trackingInterval);
         trackingInterval = null;
     }
-    // NO LIMPIAR el seguimiento, solo cerrar el panel
     updateTrackingButton();
 });
 
-// Verificar estado del pedido
 const checkOrderStatus = async () => {
     if (!currentOrderId) return;
     
     try {
         const { data, error } = await supabase
             .from('orders')
-            .select('status')
+            .select('*')
             .eq('id', currentOrderId)
             .single();
         
-        if (error) {
+        if (error || !data) {
             console.error('Error checking order status:', error);
             return;
         }
         
-        if (data) {
-            updateTrackingStatus(data.status);
-        }
+        updateTrackingStatus(data);
     } catch (error) {
         console.error('Error:', error);
     }
-};
+}
 
-// Actualizar UI de seguimiento
-const updateTrackingStatus = (status) => {
+const updateTrackingStatus = (order) => {
+    const status = order.status;
     const steps = ['pending', 'preparing', 'ready', 'delivered'];
     const statusMap = {
         'pending': '⏳ Pendiente',
@@ -526,21 +581,17 @@ const updateTrackingStatus = (status) => {
         }
     });
     
+    // Actualizar ticket
+    generateTicket(order);
+    
     if (status === 'delivered') {
         if (trackingInterval) {
             clearInterval(trackingInterval);
             trackingInterval = null;
         }
         showNotification('🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.', 'success');
-        
-        // Limpiar después de 5 minutos
-        setTimeout(() => {
-            clearTracking();
-            document.getElementById('orderTrackingPanel').style.display = 'none';
-            document.getElementById('overlay').classList.remove('active');
-        }, 300000);
     }
-};
+}
 
 // ============================================
 // BOTÓN DE SEGUIMIENTO
@@ -552,7 +603,6 @@ const updateTrackingButton = () => {
         if (tracking) {
             elements.trackingBtn.style.display = 'inline-block';
             elements.trackingBtn.title = `Seguir pedido #${tracking.orderId}`;
-            // Agregar badge
             const badge = elements.trackingBtn.querySelector('.badge');
             if (badge) {
                 badge.style.display = 'inline-block';
@@ -566,14 +616,12 @@ const updateTrackingButton = () => {
             }
         }
     }
-};
+}
 
-// Evento del botón de seguimiento
 if (elements.trackingBtn) {
     elements.trackingBtn.addEventListener('click', async () => {
         const panel = document.getElementById('orderTrackingPanel');
         if (panel && panel.style.display === 'block') {
-            // Si ya está abierto, cerrarlo
             panel.style.display = 'none';
             document.getElementById('overlay').classList.remove('active');
             if (trackingInterval) {
@@ -581,23 +629,65 @@ if (elements.trackingBtn) {
                 trackingInterval = null;
             }
         } else {
-            // Si está cerrado, restaurar seguimiento
             await restoreTracking();
         }
     });
 }
 
-// Verificar al cargar si hay seguimiento
+const restoreTracking = async () => {
+    const tracking = loadTrackingOrder();
+    if (!tracking) {
+        showNotification('No hay pedido activo para seguir', 'warning');
+        updateTrackingButton();
+        return false;
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', tracking.orderId)
+            .single();
+        
+        if (error || !data) {
+            clearTracking();
+            showNotification('El pedido ya no está disponible', 'warning');
+            return false;
+        }
+        
+        showTrackingPanel(data.id, data.table_number, data.total);
+        showNotification('📱 Reanudando seguimiento del pedido #' + data.id, 'info');
+        updateTrackingButton();
+        return true;
+    } catch (error) {
+        console.error('Error:', error);
+        updateTrackingButton();
+        return false;
+    }
+}
+
 const checkInitialTracking = () => {
     const tracking = loadTrackingOrder();
     if (tracking) {
         updateTrackingButton();
-        // Mostrar notificación pero NO abrir el panel
         setTimeout(() => {
             showNotification('📱 Tienes un pedido activo. Haz clic en el botón 🚚 para seguirlo.', 'info');
         }, 2000);
     }
-};
+}
+
+// ============================================
+// BOTÓN DE TICKET
+// ============================================
+
+document.getElementById('downloadTicketBtn')?.addEventListener('click', () => {
+    const choice = confirm('¿Descargar ticket como texto? (Cancelar para imprimir)');
+    if (choice) {
+        downloadTicketAsText();
+    } else {
+        window.print();
+    }
+});
 
 // ============================================
 // PEDIDOS
@@ -647,7 +737,7 @@ const placeOrder = async () => {
         const orderData = result.data[0];
         showNotification('🎉 ¡Pedido realizado con éxito!', 'success');
         
-        showTrackingPanel(
+        await showTrackingPanel(
             orderData.id,
             orderData.table_number,
             orderData.total
@@ -711,11 +801,11 @@ if (elements.tableNumber) {
 }
 
 // ============================================
-// ESTILOS
+// ESTILOS ADICIONALES
 // ============================================
 
-const trackingStyles = document.createElement('style');
-trackingStyles.textContent = `
+const styles = document.createElement('style');
+styles.textContent = `
     .order-tracking-panel {
         position: fixed;
         bottom: 80px;
@@ -745,6 +835,31 @@ trackingStyles.textContent = `
     .tracking-header h3 {
         margin: 0;
         color: #2c3e50;
+    }
+    
+    .tracking-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+    
+    .btn-ticket {
+        padding: 0.4rem 0.8rem;
+        background: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .btn-ticket:hover {
+        background: #219a52;
+        transform: scale(1.05);
     }
     
     .close-tracking {
@@ -912,38 +1027,104 @@ trackingStyles.textContent = `
         animation: pulse 1.5s infinite;
     }
     
+    .ticket-content {
+        background: #f9f9f9;
+        padding: 1.5rem;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        max-width: 400px;
+        margin: 0 auto;
+        border: 1px solid #ddd;
+    }
+    
+    .ticket-content .ticket-header {
+        text-align: center;
+        border-bottom: 2px dashed #333;
+        padding-bottom: 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+    
+    .ticket-content .ticket-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #2c3e50;
+    }
+    
+    .ticket-content .ticket-header p {
+        margin: 0.2rem 0;
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .ticket-content .ticket-items {
+        margin: 0.8rem 0;
+    }
+    
+    .ticket-content .ticket-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.3rem 0;
+        border-bottom: 1px dotted #ddd;
+        font-size: 0.9rem;
+    }
+    
+    .ticket-content .ticket-total {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.8rem 0;
+        border-top: 2px solid #333;
+        margin-top: 0.5rem;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .ticket-content .ticket-footer {
+        text-align: center;
+        margin-top: 1rem;
+        padding-top: 0.8rem;
+        border-top: 2px dashed #333;
+        font-size: 0.8rem;
+        color: #999;
+    }
+    
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .ticket-print-area, .ticket-print-area * {
+            visibility: visible !important;
+        }
+        .ticket-print-area {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+            background: white;
+            z-index: 9999;
+        }
+        .btn-ticket, .close-tracking, #trackingBtn, .tracking-actions {
+            display: none !important;
+        }
+        .order-tracking-panel {
+            position: static !important;
+            transform: none !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        #overlay {
+            display: none !important;
+        }
+    }
+    
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.2); }
         100% { transform: scale(1); }
     }
     
-    @media (max-width: 768px) {
-        .order-tracking-panel {
-            width: 95%;
-            bottom: 70px;
-            padding: 1rem;
-        }
-        
-        .status-step i {
-            font-size: 1.2rem;
-            width: 35px;
-            height: 35px;
-        }
-        
-        .status-step span {
-            font-size: 0.6rem;
-        }
-    }
-`;
-document.head.appendChild(trackingStyles);
-
-// ============================================
-// ESTILOS BASE
-// ============================================
-
-const style = document.createElement('style')
-style.textContent = `
     @keyframes slideUp {
         from {
             opacity: 0;
@@ -955,289 +1136,27 @@ style.textContent = `
         }
     }
     
-    .menu-item {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .menu-item:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .btn-add {
-        transition: all 0.3s ease;
-    }
-    
-    .btn-add:hover {
-        transform: scale(1.05);
-        background: #c0392b;
-    }
-    
-    .btn-add:active {
-        transform: scale(0.95);
-    }
-    
-    .admin-access-hint {
-        position: fixed;
-        bottom: 1rem;
-        right: 1rem;
-        z-index: 50;
-        opacity: 0.3;
-        transition: opacity 0.3s ease;
-    }
-    
-    .admin-access-hint:hover {
-        opacity: 1;
-    }
-    
-    .admin-access-hint a {
-        color: #999;
-        text-decoration: none;
-        font-size: 0.8rem;
-        background: white;
-        padding: 0.3rem 0.8rem;
-        border-radius: 20px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-`
-console.log('🚀 Iniciando aplicación...')
-loadData()
-
-// ============================================
-// FUNCIONES PARA EL TICKET
-// ============================================
-
-// Generar y mostrar el ticket
-const generateTicket = (order) => {
-    if (!order) return;
-    
-    // Guardar la fecha
-    const date = new Date(order.created_at);
-    document.getElementById('trackingDate').textContent = date.toLocaleString();
-    
-    // Generar HTML del ticket
-    const itemsHTML = order.items.map(item => `
-        <div class="ticket-item">
-            <span>${item.quantity}x ${item.name}</span>
-            <span>$${(item.price * item.quantity).toFixed(2)}</span>
-        </div>
-    `).join('');
-    
-    const ticketHTML = `
-        <div class="ticket-print-area" id="ticketPrintArea">
-            <div class="ticket-content">
-                <div class="ticket-header">
-                    <h3>🍽️ ${document.querySelector('h1')?.textContent || 'Carta Digital'}</h3>
-                    <p>Pedido #${order.id}</p>
-                    <p>Mesa ${order.table_number || 'N/A'}</p>
-                    <p>${date.toLocaleString()}</p>
-                </div>
-                <div class="ticket-items">
-                    ${itemsHTML}
-                </div>
-                <div class="ticket-total">
-                    <span>TOTAL</span>
-                    <span>$${Number(order.total).toFixed(2)}</span>
-                </div>
-                <div class="ticket-footer">
-                    <p>¡Gracias por tu visita!</p>
-                    <p style="font-size: 0.7rem;">Estado: ${getStatusText(order.status)}</p>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Mostrar el ticket en el panel de seguimiento
-    const trackingItems = document.getElementById('trackingItems');
-    if (trackingItems) {
-        trackingItems.innerHTML = ticketHTML;
-    }
-};
-
-// Descargar ticket como imagen o imprimir
-const downloadTicket = () => {
-    const ticketElement = document.getElementById('ticketPrintArea');
-    if (!ticketElement) {
-        showNotification('No hay ticket para descargar', 'warning');
-        return;
-    }
-    
-    // Opción 1: Imprimir directamente
-    window.print();
-    
-    // Opción 2: Descargar como HTML (alternativa)
-    // La impresión es más sencilla y funciona mejor
-};
-
-// Descargar ticket como texto
-const downloadTicketAsText = () => {
-    const orderId = document.getElementById('trackingOrderId').textContent;
-    if (orderId === '-') {
-        showNotification('No hay pedido activo', 'warning');
-        return;
-    }
-    
-    // Obtener datos del ticket
-    const ticketContent = document.querySelector('.ticket-content');
-    if (!ticketContent) return;
-    
-    // Extraer texto del ticket
-    const lines = [];
-    const elements = ticketContent.querySelectorAll('*');
-    elements.forEach(el => {
-        if (el.textContent && el.textContent.trim()) {
-            const text = el.textContent.trim();
-            if (text && !lines.includes(text)) {
-                lines.push(text);
-            }
+    @media (max-width: 768px) {
+        .order-tracking-panel {
+            width: 95%;
+            bottom: 70px;
+            padding: 1rem;
         }
-    });
-    
-    const textContent = lines.join('\n');
-    
-    // Crear archivo de texto
-    const blob = new Blob([textContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ticket-pedido-${orderId}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    showNotification('✅ Ticket descargado como texto', 'success');
-};
-
-// ============================================
-// MODIFICAR showTrackingPanel PARA INCLUIR TICKET
-// ============================================
-
-// Reemplazar la función showTrackingPanel existente con esta
-const showTrackingPanel = async (orderId, table, total) => {
-    currentOrderId = orderId;
-    
-    saveTrackingOrder(orderId, table, total);
-    
-    // Obtener datos completos del pedido para el ticket
-    try {
-        const { data, error } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('id', orderId)
-            .single();
-        
-        if (data) {
-            generateTicket(data);
+        .status-step i {
+            font-size: 1.2rem;
+            width: 35px;
+            height: 35px;
         }
-    } catch (error) {
-        console.error('Error obteniendo datos del pedido:', error);
-    }
-    
-    document.getElementById('trackingOrderId').textContent = orderId;
-    document.getElementById('trackingTable').textContent = table;
-    document.getElementById('trackingTotal').textContent = `$${Number(total).toFixed(2)}`;
-    document.getElementById('orderTrackingPanel').style.display = 'block';
-    document.getElementById('overlay').classList.add('active');
-    
-    if (trackingInterval) clearInterval(trackingInterval);
-    trackingInterval = setInterval(checkOrderStatus, 5000);
-    checkOrderStatus();
-    updateTrackingButton();
-};
-
-// ============================================
-// MODIFICAR updateTrackingStatus PARA ACTUALIZAR TICKET
-// ============================================
-
-// Reemplazar la función updateTrackingStatus existente
-const updateTrackingStatus = async (status) => {
-    const steps = ['pending', 'preparing', 'ready', 'delivered'];
-    const statusMap = {
-        'pending': '⏳ Pendiente',
-        'preparing': '🔪 Preparando',
-        'ready': '✅ Listo',
-        'delivered': '📦 Entregado'
-    };
-    
-    document.getElementById('trackingStatus').textContent = statusMap[status] || status;
-    document.getElementById('trackingStatus').className = `status-${status}`;
-    
-    steps.forEach((step, index) => {
-        const element = document.getElementById(`step${step.charAt(0).toUpperCase() + step.slice(1)}`);
-        if (!element) return;
-        
-        const stepIndex = steps.indexOf(step);
-        const currentIndex = steps.indexOf(status);
-        
-        element.classList.remove('active', 'completed');
-        
-        if (stepIndex < currentIndex) {
-            element.classList.add('completed');
-        } else if (stepIndex === currentIndex) {
-            element.classList.add('active');
-        }
-    });
-    
-    // Actualizar ticket con nuevo estado
-    if (currentOrderId) {
-        try {
-            const { data, error } = await supabase
-                .from('orders')
-                .select('*')
-                .eq('id', currentOrderId)
-                .single();
-            
-            if (data) {
-                generateTicket(data);
-            }
-        } catch (error) {
-            console.error('Error actualizando ticket:', error);
+        .status-step span {
+            font-size: 0.6rem;
         }
     }
-    
-    if (status === 'delivered') {
-        if (trackingInterval) {
-            clearInterval(trackingInterval);
-            trackingInterval = null;
-        }
-        showNotification('🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.', 'success');
-        
-        setTimeout(() => {
-            // No limpiar automáticamente, el usuario puede ver el ticket
-        }, 300000);
-    }
-};
-
-// ============================================
-// EVENTO DEL BOTÓN DE TICKET
-// ============================================
-
-// Botón para descargar ticket
-document.getElementById('downloadTicketBtn')?.addEventListener('click', () => {
-    // Mostrar opciones al usuario
-    const choice = confirm('¿Descargar ticket como texto? (Cancelar para imprimir)');
-    if (choice) {
-        downloadTicketAsText();
-    } else {
-        downloadTicket();
-    }
-});
-
-// También agregar botón para imprimir desde el ticket
-document.addEventListener('keydown', (e) => {
-    // Ctrl+P para imprimir
-    if (e.ctrlKey && e.key === 'p') {
-        const panel = document.getElementById('orderTrackingPanel');
-        if (panel && panel.style.display === 'block') {
-            // Si el panel está abierto, permitir imprimir
-            setTimeout(() => {
-                window.print();
-            }, 100);
-        }
-    }
-});
-document.head.appendChild(style)
+`;
+document.head.appendChild(styles);
 
 // ============================================
 // INICIAR
 // ============================================
 
+console.log('🚀 Iniciando aplicación...')
+loadData()

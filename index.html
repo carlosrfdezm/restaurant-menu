@@ -14,18 +14,15 @@
             <div class="header-content">
                 <h1>🍽️ Carta Digital</h1>
                 <div class="header-actions">
-                    <!-- Botón de seguimiento - SIEMPRE VISIBLE cuando hay pedido activo -->
+                    <!-- Botón de seguimiento -->
                     <button id="trackingBtn" style="display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--secondary); padding: 0.3rem 0.6rem; border-radius: 8px; background: #f0f0f0; position: relative;" title="Seguir mi pedido">
                         <i class="fas fa-truck"></i>
                         <span class="badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; border-radius: 50%; padding: 0.1rem 0.4rem; font-size: 0.6rem; font-weight: bold;">1</span>
                     </button>
                     
-                    <!-- Acceso al panel de administración -->
                     <a href="admin.html" class="btn-admin-link" title="Panel de Administración">
                         <i class="fas fa-user-cog"></i>
                     </a>
-                    
-                    <!-- Carrito de compras -->
                     <div class="cart-icon" id="cartIcon">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-badge" id="cartBadge">0</span>
@@ -38,7 +35,7 @@
             </div>
         </header>
 
-        <!-- ===== BANNER DE BIENVENIDA (se muestra si viene de QR) ===== -->
+        <!-- ===== BANNER DE BIENVENIDA ===== -->
         <div id="welcomeBanner" style="display: none;">
             <i class="fas fa-utensils"></i> 
             ¡Bienvenido a la Mesa <span id="welcomeTable">-</span>!
@@ -49,12 +46,12 @@
 
         <!-- ===== NAVEGACIÓN DE CATEGORÍAS ===== -->
         <nav class="categories-nav" id="categoriesNav">
-            <!-- Generado dinámicamente por JavaScript -->
+            <!-- Generado dinámicamente -->
         </nav>
 
         <!-- ===== CONTENIDO DEL MENÚ ===== -->
         <main class="menu-container" id="menuContainer">
-            <!-- Generado dinámicamente por JavaScript -->
+            <!-- Generado dinámicamente -->
         </main>
 
         <!-- ===== PANEL DEL CARRITO ===== -->
@@ -64,7 +61,6 @@
                 <button class="close-cart" id="closeCart">&times;</button>
             </div>
             <div class="cart-items" id="cartItems">
-                <!-- Items del carrito generados por JavaScript -->
                 <div style="text-align: center; padding: 2rem; color: #999;">
                     <i class="fas fa-shopping-basket" style="font-size: 2rem; margin-bottom: 1rem;"></i>
                     <p>Tu carrito está vacío</p>
@@ -81,19 +77,19 @@
             </div>
         </div>
 
-        <!-- ===== OVERLAY (fondo oscuro) ===== -->
+        <!-- ===== OVERLAY ===== -->
         <div class="overlay" id="overlay"></div>
 
-        <!-- ===== PANEL DE SEGUIMIENTO DE PEDIDO ===== -->
+        <!-- ===== PANEL DE SEGUIMIENTO ===== -->
         <div class="order-tracking-panel" id="orderTrackingPanel" style="display: none;">
             <div class="tracking-header">
                 <h3><i class="fas fa-truck"></i> Seguimiento del Pedido</h3>
-
-                 <div class="tracking-actions">
-            <button class="btn-ticket" id="downloadTicketBtn" title="Descargar ticket">
-                <i class="fas fa-receipt"></i> Ticket
-            </button>
-                <button class="close-tracking" id="closeTracking">&times;</button>
+                <div class="tracking-actions">
+                    <button class="btn-ticket" id="downloadTicketBtn" title="Descargar ticket">
+                        <i class="fas fa-receipt"></i> Ticket
+                    </button>
+                    <button class="close-tracking" id="closeTracking">&times;</button>
+                </div>
             </div>
             <div id="trackingContent">
                 <div class="tracking-status">
@@ -124,14 +120,13 @@
                     <p><strong>Estado:</strong> <span id="trackingStatus" class="status-pending">Pendiente</span></p>
                     <p><strong>Fecha:</strong> <span id="trackingDate">-</span></p>
                 </div>
-		<!-- Aquí se mostrará el resumen del pedido -->
-                 <div id="trackingItems" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
-                 <!-- Items del pedido -->
-                 </div>
+                <div id="trackingItems" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                    <!-- Items del pedido -->
+                </div>
             </div>
         </div>
 
-        <!-- ===== ACCESO RÁPIDO AL ADMIN (en la esquina inferior) ===== -->
+        <!-- ===== ACCESO RÁPIDO AL ADMIN ===== -->
         <div class="admin-access-hint">
             <a href="admin.html" title="Panel de Administración">
                 <i class="fas fa-user-cog"></i> Admin
@@ -139,7 +134,6 @@
         </div>
     </div>
 
-    <!-- ===== CONFIGURACIÓN DE IMPORT MAP PARA SUPABASE ===== -->
     <script type="importmap">
         {
             "imports": {
@@ -147,8 +141,6 @@
             }
         }
     </script>
-    
-    <!-- ===== CARGA DE LA APLICACIÓN ===== -->
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
