@@ -1,3 +1,20 @@
+// Verificar si la URL tiene un parámetro de seguimiento
+const checkUrlForTracking = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tracking');
+};
+
+// Si se accede con tracking, mostrar notificación
+if (checkUrlForTracking()) {
+    setTimeout(() => {
+        showNotification('📱 Reanudando seguimiento de tu pedido...', 'info');
+    }, 1000);
+}
+
+
+
+
+
 // ===== APP.JS - CON DETECCIÓN DE QR =====
 import { 
     supabase,
@@ -153,6 +170,10 @@ const loadData = async () => {
         
         // Detectar QR después de cargar
         initQRDetection()
+
+
+        // RESTAURAR SEGUIMIENTO DE PEDIDO
+        await restoreTracking();
         
     } catch (error) {
         console.error('❌ Error:', error)
@@ -324,6 +345,10 @@ let currentOrderId = null;
 
 const showTrackingPanel = (orderId, table, total) => {
     currentOrderId = orderId;
+	
+     // Guardar el seguimiento
+    saveTrackingOrder(orderId, table, total);
+	
     document.getElementById('trackingOrderId').textContent = orderId;
     document.getElementById('trackingTable').textContent = table;
     document.getElementById('trackingTotal').textContent = `$${Number(total).toFixed(2)}`;
@@ -342,6 +367,8 @@ document.getElementById('closeTracking')?.addEventListener('click', () => {
         clearInterval(trackingInterval);
         trackingInterval = null;
     }
+     // Limpiar el seguimiento al cerrar manualmente
+    clearTracking();
 });
 
 const checkOrderStatus = async () => {
@@ -401,6 +428,14 @@ const updateTrackingStatus = (status) => {
             trackingInterval = null;
         }
         showNotification('🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.', 'success');
+
+      // Limpiar el seguimiento después de 5 minutos
+        setTimeout(() => {
+            clearTracking();
+            // Cerrar el panel después de 5 minutos
+            document.getElementById('orderTrackingPanel').style.display = 'none';
+            document.getElementById('overlay').classList.remove('active');
+        }, 300000); // 5 minutos
     }
 }
 
@@ -744,3 +779,169 @@ document.head.appendChild(style)
 
 // ===== INICIAR =====
 loadData()
+
+// ===== PERSISTENCIA DEL SEGUIMIENTO =====
+
+// Guardar el ID del pedido en localStorage
+const saveTrackingOrder = (orderId, table, total) => {
+    if (orderId) {
+        const trackingData = {
+            orderId: orderId,
+            table: table,
+            total: total,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('trackingOrder', JSON.stringify(trackingData));
+        
+        // También guardar en la URL para compartir
+        const url = new URL(window.location);
+        url.searchParams.set('tracking', orderId);
+        window.history.replaceState({}, '', url);
+    }
+};
+
+// Cargar el seguimiento guardado
+const loadTrackingOrder = () => {
+    // Primero verificar URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const trackingId = urlParams.get('tracking');
+    
+    if (trackingId) {
+        // Buscar el pedido en la base de datos
+        return { orderId: parseInt(trackingId), fromUrl: true };
+    }
+    
+    // Luego verificar localStorage
+    const saved = localStorage.getItem('trackingOrder');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            // Verificar que no sea muy antiguo (más de 24 horas)
+            if (Date.now() - data.timestamp < 86400000) {
+                return { 
+                    orderId: data.orderId, 
+                    table: data.table, 
+                    total: data.total,
+                    fromUrl: false 
+                };
+            } else {
+                // Limpiar si es muy antiguo
+                localStorage.removeItem('trackingOrder');
+            }
+        } catch (e) {
+            localStorage.removeItem('trackingOrder');
+        }
+    }
+    
+    return null;
+};
+
+// Restaurar seguimiento al cargar la página
+const restoreTracking = async () => {
+    const tracking = loadTrackingOrder();
+    if (!tracking) return false;
+    
+    try {
+        // Verificar que el pedido existe
+        const { data, error } = await supabase
+            .from('orders')
+            .select('id, table_number, total, status')
+            .eq('id', tracking.orderId)
+            .single();
+        
+        if (error || !data) {
+            // El pedido no existe o hubo error
+            localStorage.removeItem('trackingOrder');
+            return false;
+        }
+        
+        // Mostrar el panel de seguimiento
+        showTrackingPanel(
+            data.id,
+            data.table_number,
+            data.total
+        );
+        
+        showNotification('📱 Continuando seguimiento del pedido #' + data.id, 'info');
+        return true;
+    } catch (error) {
+        console.error('Error restaurando seguimiento:', error);
+        return false;
+    }
+    // Si el pedido ya fue entregado, limpiar
+        if (data.status === 'delivered') {
+            setTimeout(() => {
+                clearTracking();
+                updateTrackingButton();
+            }, 300000); // 5 minutos
+        }
+        
+        showTrackingPanel(
+            data.id,
+            data.table_number,
+            data.total
+        );
+        
+        showNotification('📱 Continuando seguimiento del pedido #' + data.id, 'info');
+        updateTrackingButton();
+        return true;
+    } catch (error) {
+        console.error('Error restaurando seguimiento:', error);
+        updateTrackingButton();
+        return false;
+    }
+};
+
+// Limpiar el seguimiento
+const clearTracking = () => {
+    localStorage.removeItem('trackingOrder');
+    const url = new URL(window.location);
+    url.searchParams.delete('tracking');
+    window.history.replaceState({}, '', url);
+};
+
+// ============================================
+// BOTÓN DE SEGUIMIENTO
+// ============================================
+
+// Botón para volver al seguimiento
+document.getElementById('trackingBtn')?.addEventListener('click', () => {
+    const tracking = loadTrackingOrder();
+    if (tracking) {
+        restoreTracking();
+    }
+});
+
+// Mostrar/ocultar el botón según haya seguimiento
+const updateTrackingButton = () => {
+    const tracking = loadTrackingOrder();
+    const btn = document.getElementById('trackingBtn');
+    if (btn) {
+        btn.style.display = tracking ? 'inline-block' : 'none';
+    }
+};
+
+// ============================================
+// INICIO DE LA APLICACIÓN
+// ============================================
+
+// Verificar si la URL tiene un parámetro de seguimiento
+const checkUrlForTracking = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tracking');
+};
+
+// Si se accede con tracking, mostrar notificación
+if (checkUrlForTracking()) {
+    setTimeout(() => {
+        showNotification('📱 Reanudando seguimiento de tu pedido...', 'info');
+    }, 1000);
+}
+
+// Cargar datos y restaurar seguimiento
+loadData();
+
+// Exportar funciones para uso global si es necesario
+window.restoreTracking = restoreTracking;
+window.clearTracking = clearTracking;
+window.saveTrackingOrder = saveTrackingOrder;

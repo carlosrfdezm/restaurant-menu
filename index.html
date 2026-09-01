@@ -27,6 +27,20 @@
                 <label>Mesa:</label>
                 <input type="number" id="tableNumber" placeholder="N°" min="1" max="99" required>
             </div>
+
+            <!-- En index.html, agregar un botón de seguimiento en el header -->
+<div class="header-actions">
+    <button id="trackingBtn" style="display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--secondary);" title="Ver seguimiento del pedido">
+        <i class="fas fa-truck"></i>
+    </button>
+    <a href="admin.html" class="btn-admin-link" title="Panel de Administración">
+        <i class="fas fa-user-cog"></i>
+    </a>
+    <div class="cart-icon" id="cartIcon">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="cart-badge" id="cartBadge">0</span>
+    </div>
+</div>
         </header>
 
         <!-- Banner de bienvenida (se muestra si viene de QR) -->
