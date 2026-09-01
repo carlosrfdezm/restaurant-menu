@@ -88,6 +88,11 @@
         <div class="order-tracking-panel" id="orderTrackingPanel" style="display: none;">
             <div class="tracking-header">
                 <h3><i class="fas fa-truck"></i> Seguimiento del Pedido</h3>
+
+                 <div class="tracking-actions">
+            <button class="btn-ticket" id="downloadTicketBtn" title="Descargar ticket">
+                <i class="fas fa-receipt"></i> Ticket
+            </button>
                 <button class="close-tracking" id="closeTracking">&times;</button>
             </div>
             <div id="trackingContent">
@@ -117,7 +122,12 @@
                     <p><strong>Mesa:</strong> <span id="trackingTable">-</span></p>
                     <p><strong>Total:</strong> <span id="trackingTotal">-</span></p>
                     <p><strong>Estado:</strong> <span id="trackingStatus" class="status-pending">Pendiente</span></p>
+                    <p><strong>Fecha:</strong> <span id="trackingDate">-</span></p>
                 </div>
+		<!-- Aquí se mostrará el resumen del pedido -->
+                 <div id="trackingItems" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                 <!-- Items del pedido -->
+                 </div>
             </div>
         </div>
 

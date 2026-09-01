@@ -1008,3 +1008,236 @@ document.head.appendChild(style)
 
 console.log('🚀 Iniciando aplicación...')
 loadData()
+
+// ============================================
+// FUNCIONES PARA EL TICKET
+// ============================================
+
+// Generar y mostrar el ticket
+const generateTicket = (order) => {
+    if (!order) return;
+    
+    // Guardar la fecha
+    const date = new Date(order.created_at);
+    document.getElementById('trackingDate').textContent = date.toLocaleString();
+    
+    // Generar HTML del ticket
+    const itemsHTML = order.items.map(item => `
+        <div class="ticket-item">
+            <span>${item.quantity}x ${item.name}</span>
+            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+        </div>
+    `).join('');
+    
+    const ticketHTML = `
+        <div class="ticket-print-area" id="ticketPrintArea">
+            <div class="ticket-content">
+                <div class="ticket-header">
+                    <h3>🍽️ ${document.querySelector('h1')?.textContent || 'Carta Digital'}</h3>
+                    <p>Pedido #${order.id}</p>
+                    <p>Mesa ${order.table_number || 'N/A'}</p>
+                    <p>${date.toLocaleString()}</p>
+                </div>
+                <div class="ticket-items">
+                    ${itemsHTML}
+                </div>
+                <div class="ticket-total">
+                    <span>TOTAL</span>
+                    <span>$${Number(order.total).toFixed(2)}</span>
+                </div>
+                <div class="ticket-footer">
+                    <p>¡Gracias por tu visita!</p>
+                    <p style="font-size: 0.7rem;">Estado: ${getStatusText(order.status)}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar el ticket en el panel de seguimiento
+    const trackingItems = document.getElementById('trackingItems');
+    if (trackingItems) {
+        trackingItems.innerHTML = ticketHTML;
+    }
+};
+
+// Descargar ticket como imagen o imprimir
+const downloadTicket = () => {
+    const ticketElement = document.getElementById('ticketPrintArea');
+    if (!ticketElement) {
+        showNotification('No hay ticket para descargar', 'warning');
+        return;
+    }
+    
+    // Opción 1: Imprimir directamente
+    window.print();
+    
+    // Opción 2: Descargar como HTML (alternativa)
+    // La impresión es más sencilla y funciona mejor
+};
+
+// Descargar ticket como texto
+const downloadTicketAsText = () => {
+    const orderId = document.getElementById('trackingOrderId').textContent;
+    if (orderId === '-') {
+        showNotification('No hay pedido activo', 'warning');
+        return;
+    }
+    
+    // Obtener datos del ticket
+    const ticketContent = document.querySelector('.ticket-content');
+    if (!ticketContent) return;
+    
+    // Extraer texto del ticket
+    const lines = [];
+    const elements = ticketContent.querySelectorAll('*');
+    elements.forEach(el => {
+        if (el.textContent && el.textContent.trim()) {
+            const text = el.textContent.trim();
+            if (text && !lines.includes(text)) {
+                lines.push(text);
+            }
+        }
+    });
+    
+    const textContent = lines.join('\n');
+    
+    // Crear archivo de texto
+    const blob = new Blob([textContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ticket-pedido-${orderId}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showNotification('✅ Ticket descargado como texto', 'success');
+};
+
+// ============================================
+// MODIFICAR showTrackingPanel PARA INCLUIR TICKET
+// ============================================
+
+// Reemplazar la función showTrackingPanel existente con esta
+const showTrackingPanel = async (orderId, table, total) => {
+    currentOrderId = orderId;
+    
+    saveTrackingOrder(orderId, table, total);
+    
+    // Obtener datos completos del pedido para el ticket
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', orderId)
+            .single();
+        
+        if (data) {
+            generateTicket(data);
+        }
+    } catch (error) {
+        console.error('Error obteniendo datos del pedido:', error);
+    }
+    
+    document.getElementById('trackingOrderId').textContent = orderId;
+    document.getElementById('trackingTable').textContent = table;
+    document.getElementById('trackingTotal').textContent = `$${Number(total).toFixed(2)}`;
+    document.getElementById('orderTrackingPanel').style.display = 'block';
+    document.getElementById('overlay').classList.add('active');
+    
+    if (trackingInterval) clearInterval(trackingInterval);
+    trackingInterval = setInterval(checkOrderStatus, 5000);
+    checkOrderStatus();
+    updateTrackingButton();
+};
+
+// ============================================
+// MODIFICAR updateTrackingStatus PARA ACTUALIZAR TICKET
+// ============================================
+
+// Reemplazar la función updateTrackingStatus existente
+const updateTrackingStatus = async (status) => {
+    const steps = ['pending', 'preparing', 'ready', 'delivered'];
+    const statusMap = {
+        'pending': '⏳ Pendiente',
+        'preparing': '🔪 Preparando',
+        'ready': '✅ Listo',
+        'delivered': '📦 Entregado'
+    };
+    
+    document.getElementById('trackingStatus').textContent = statusMap[status] || status;
+    document.getElementById('trackingStatus').className = `status-${status}`;
+    
+    steps.forEach((step, index) => {
+        const element = document.getElementById(`step${step.charAt(0).toUpperCase() + step.slice(1)}`);
+        if (!element) return;
+        
+        const stepIndex = steps.indexOf(step);
+        const currentIndex = steps.indexOf(status);
+        
+        element.classList.remove('active', 'completed');
+        
+        if (stepIndex < currentIndex) {
+            element.classList.add('completed');
+        } else if (stepIndex === currentIndex) {
+            element.classList.add('active');
+        }
+    });
+    
+    // Actualizar ticket con nuevo estado
+    if (currentOrderId) {
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('id', currentOrderId)
+                .single();
+            
+            if (data) {
+                generateTicket(data);
+            }
+        } catch (error) {
+            console.error('Error actualizando ticket:', error);
+        }
+    }
+    
+    if (status === 'delivered') {
+        if (trackingInterval) {
+            clearInterval(trackingInterval);
+            trackingInterval = null;
+        }
+        showNotification('🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.', 'success');
+        
+        setTimeout(() => {
+            // No limpiar automáticamente, el usuario puede ver el ticket
+        }, 300000);
+    }
+};
+
+// ============================================
+// EVENTO DEL BOTÓN DE TICKET
+// ============================================
+
+// Botón para descargar ticket
+document.getElementById('downloadTicketBtn')?.addEventListener('click', () => {
+    // Mostrar opciones al usuario
+    const choice = confirm('¿Descargar ticket como texto? (Cancelar para imprimir)');
+    if (choice) {
+        downloadTicketAsText();
+    } else {
+        downloadTicket();
+    }
+});
+
+// También agregar botón para imprimir desde el ticket
+document.addEventListener('keydown', (e) => {
+    // Ctrl+P para imprimir
+    if (e.ctrlKey && e.key === 'p') {
+        const panel = document.getElementById('orderTrackingPanel');
+        if (panel && panel.style.display === 'block') {
+            // Si el panel está abierto, permitir imprimir
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        }
+    }
+});
