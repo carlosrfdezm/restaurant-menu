@@ -354,14 +354,19 @@ const saveTrackingOrder = (orderId, table, total) => {
         };
         localStorage.setItem('trackingOrder', JSON.stringify(trackingData));
         
+        // Guardar en URL
         const url = new URL(window.location);
         url.searchParams.set('tracking', orderId);
         window.history.replaceState({}, '', url);
+        
+        // Mostrar el botón de seguimiento
+        updateTrackingButton();
     }
 };
 
 // Cargar el seguimiento guardado
 const loadTrackingOrder = () => {
+    // Primero verificar URL
     const urlParams = new URLSearchParams(window.location.search);
     const trackingId = urlParams.get('tracking');
     
@@ -369,10 +374,12 @@ const loadTrackingOrder = () => {
         return { orderId: parseInt(trackingId), fromUrl: true };
     }
     
+    // Luego verificar localStorage
     const saved = localStorage.getItem('trackingOrder');
     if (saved) {
         try {
             const data = JSON.parse(saved);
+            // Verificar que no sea muy antiguo (más de 24 horas)
             if (Date.now() - data.timestamp < 86400000) {
                 return { 
                     orderId: data.orderId, 
@@ -382,6 +389,10 @@ const loadTrackingOrder = () => {
                 };
             } else {
                 localStorage.removeItem('trackingOrder');
+                // Limpiar URL también
+                const url = new URL(window.location);
+                url.searchParams.delete('tracking');
+                window.history.replaceState({}, '', url);
             }
         } catch (e) {
             localStorage.removeItem('trackingOrder');
@@ -391,15 +402,17 @@ const loadTrackingOrder = () => {
     return null;
 };
 
-// Restaurar seguimiento al cargar la página
+// Restaurar seguimiento al hacer clic en el botón
 const restoreTracking = async () => {
     const tracking = loadTrackingOrder();
     if (!tracking) {
+        showNotification('No hay pedido activo para seguir', 'warning');
         updateTrackingButton();
         return false;
     }
     
     try {
+        // Verificar que el pedido existe
         const { data, error } = await supabase
             .from('orders')
             .select('id, table_number, total, status')
@@ -407,18 +420,34 @@ const restoreTracking = async () => {
             .single();
         
         if (error || !data) {
-            localStorage.removeItem('trackingOrder');
-            updateTrackingButton();
+            // El pedido no existe, limpiar
+            clearTracking();
+            showNotification('El pedido ya no está disponible', 'warning');
             return false;
         }
         
+        // Si el pedido ya fue entregado hace más de 5 minutos, limpiar
+        if (data.status === 'delivered') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackingParam = urlParams.get('tracking');
+            if (!trackingParam) {
+                // Si no viene de URL, limpiar después de mostrar
+                setTimeout(() => {
+                    clearTracking();
+                    document.getElementById('orderTrackingPanel').style.display = 'none';
+                    document.getElementById('overlay').classList.remove('active');
+                }, 300000);
+            }
+        }
+        
+        // Mostrar el panel de seguimiento
         showTrackingPanel(
             data.id,
             data.table_number,
             data.total
         );
         
-        showNotification('📱 Continuando seguimiento del pedido #' + data.id, 'info');
+        showNotification('📱 Reanudando seguimiento del pedido #' + data.id, 'info');
         updateTrackingButton();
         return true;
     } catch (error) {
@@ -435,35 +464,47 @@ const clearTracking = () => {
     url.searchParams.delete('tracking');
     window.history.replaceState({}, '', url);
     updateTrackingButton();
+    
+    // Ocultar el botón
+    if (elements.trackingBtn) {
+        elements.trackingBtn.style.display = 'none';
+    }
 };
 
 // Mostrar panel de seguimiento
 const showTrackingPanel = (orderId, table, total) => {
     currentOrderId = orderId;
     
+    // Guardar el seguimiento para persistencia
     saveTrackingOrder(orderId, table, total);
     
+    // Actualizar UI del panel
     document.getElementById('trackingOrderId').textContent = orderId;
     document.getElementById('trackingTable').textContent = table;
     document.getElementById('trackingTotal').textContent = `$${Number(total).toFixed(2)}`;
     document.getElementById('orderTrackingPanel').style.display = 'block';
     document.getElementById('overlay').classList.add('active');
     
+    // Iniciar actualizaciones
     if (trackingInterval) clearInterval(trackingInterval);
     trackingInterval = setInterval(checkOrderStatus, 5000);
     checkOrderStatus();
+    
+    // Asegurar que el botón esté visible
     updateTrackingButton();
 };
 
-// Cerrar panel de seguimiento
+// Cerrar panel de seguimiento (pero mantener el botón)
 document.getElementById('closeTracking')?.addEventListener('click', () => {
+    // Solo cerrar el panel, no limpiar el seguimiento
     document.getElementById('orderTrackingPanel').style.display = 'none';
     document.getElementById('overlay').classList.remove('active');
     if (trackingInterval) {
         clearInterval(trackingInterval);
         trackingInterval = null;
     }
-    clearTracking();
+    // El botón permanece visible
+    updateTrackingButton();
 });
 
 // Verificar estado del pedido
@@ -487,6 +528,152 @@ const checkOrderStatus = async () => {
         }
     } catch (error) {
         console.error('Error:', error);
+    }
+};
+
+// Actualizar UI de seguimiento
+const updateTrackingStatus = (status) => {
+    const steps = ['pending', 'preparing', 'ready', 'delivered'];
+    const statusMap = {
+        'pending': '⏳ Pendiente',
+        'preparing': '🔪 Preparando',
+        'ready': '✅ Listo',
+        'delivered': '📦 Entregado'
+    };
+    
+    document.getElementById('trackingStatus').textContent = statusMap[status] || status;
+    document.getElementById('trackingStatus').className = `status-${status}`;
+    
+    steps.forEach((step, index) => {
+        const element = document.getElementById(`step${step.charAt(0).toUpperCase() + step.slice(1)}`);
+        if (!element) return;
+        
+        const stepIndex = steps.indexOf(step);
+        const currentIndex = steps.indexOf(status);
+        
+        element.classList.remove('active', 'completed');
+        
+        if (stepIndex < currentIndex) {
+            element.classList.add('completed');
+        } else if (stepIndex === currentIndex) {
+            element.classList.add('active');
+        }
+    });
+    
+    if (status === 'delivered') {
+        if (trackingInterval) {
+            clearInterval(trackingInterval);
+            trackingInterval = null;
+        }
+        showNotification('🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.', 'success');
+        
+        // Limpiar después de 5 minutos, pero mantener el botón visible
+        setTimeout(() => {
+            // No limpiar completamente, solo marcar como entregado
+            document.getElementById('orderTrackingPanel').style.display = 'none';
+            document.getElementById('overlay').classList.remove('active');
+            // El botón sigue visible
+        }, 10000); // 10 segundos para que vean el mensaje
+    }
+};
+
+// ============================================
+// BOTÓN DE SEGUIMIENTO - SIEMPRE VISIBLE
+// ============================================
+
+// Mostrar/ocultar el botón según haya seguimiento activo
+const updateTrackingButton = () => {
+    const tracking = loadTrackingOrder();
+    if (elements.trackingBtn) {
+        if (tracking) {
+            elements.trackingBtn.style.display = 'inline-block';
+            elements.trackingBtn.classList.add('has-tracking');
+            // Añadir tooltip con el número de pedido
+            elements.trackingBtn.title = `Seguir pedido #${tracking.orderId}`;
+        } else {
+            elements.trackingBtn.style.display = 'none';
+            elements.trackingBtn.classList.remove('has-tracking');
+        }
+    }
+};
+
+// Botón para volver al seguimiento - AHORA SIEMPRE FUNCIONA
+if (elements.trackingBtn) {
+    elements.trackingBtn.addEventListener('click', async () => {
+        // Si el panel ya está abierto, solo traerlo al frente
+        const panel = document.getElementById('orderTrackingPanel');
+        if (panel && panel.style.display === 'block') {
+            panel.scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+        
+        // Si no, restaurar el seguimiento
+        await restoreTracking();
+    });
+}
+
+// Verificar al cargar la página si hay seguimiento activo
+const checkInitialTracking = () => {
+    const tracking = loadTrackingOrder();
+    if (tracking) {
+        // Mostrar el botón pero NO abrir el panel automáticamente
+        updateTrackingButton();
+        // Mostrar una notificación sutil
+        setTimeout(() => {
+            showNotification('📱 Tienes un pedido activo. Haz clic en el botón 🚚 para seguir su estado.', 'info');
+        }, 2000);
+    }
+};
+
+// ============================================
+// AL INICIAR LA APP
+// ============================================
+
+// Modificar el loadData para incluir la verificación inicial
+const originalLoadData = loadData;
+loadData = async function() {
+    try {
+        state.isLoading = true;
+        showMessage('Cargando menú...', 'info');
+
+        const sectionsResult = await getMenuSections();
+        if (!sectionsResult.success) {
+            throw new Error(`Error al cargar secciones: ${sectionsResult.error}`);
+        }
+        state.sections = sectionsResult.data || [];
+        console.log(`📂 Secciones: ${state.sections.length}`);
+
+        const itemsResult = await getMenuItems();
+        if (!itemsResult.success) {
+            throw new Error(`Error al cargar items: ${itemsResult.error}`);
+        }
+        state.items = itemsResult.data || [];
+        console.log(`🍽️ Items: ${state.items.length}`);
+
+        if (state.sections.length === 0) {
+            showMessage('No hay secciones disponibles. Contacta al administrador.', 'warning');
+            return;
+        }
+
+        if (state.items.length === 0) {
+            showMessage('No hay platos disponibles en este momento.', 'warning');
+            return;
+        }
+
+        renderCategories();
+        renderMenu();
+        state.isLoading = false;
+        
+        // Detectar QR
+        initQRDetection();
+        
+        // Verificar si hay seguimiento activo (sin abrir el panel)
+        checkInitialTracking();
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        showMessage(`Error al cargar el menú: ${error.message}`, 'error');
+        state.isLoading = false;
     }
 };
 
