@@ -9,14 +9,20 @@
 </head>
 <body>
     <div id="app">
-        <!-- Header -->
+        <!-- ===== HEADER - SOLO UNO ===== -->
         <header class="header">
             <div class="header-content">
                 <h1>🍽️ Carta Digital</h1>
                 <div class="header-actions">
+                    <!-- Botón de seguimiento -->
+                    <button id="trackingBtn" style="display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--secondary); padding: 0.3rem 0.6rem; border-radius: 8px; background: #f0f0f0;" title="Ver seguimiento del pedido">
+                        <i class="fas fa-truck"></i>
+                    </button>
+                    <!-- Acceso admin -->
                     <a href="admin.html" class="btn-admin-link" title="Panel de Administración">
                         <i class="fas fa-user-cog"></i>
                     </a>
+                    <!-- Carrito -->
                     <div class="cart-icon" id="cartIcon">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-badge" id="cartBadge">0</span>
@@ -27,39 +33,28 @@
                 <label>Mesa:</label>
                 <input type="number" id="tableNumber" placeholder="N°" min="1" max="99" required>
             </div>
-
-            <!-- En index.html, agregar un botón de seguimiento en el header -->
-<div class="header-actions">
-    <button id="trackingBtn" style="display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--secondary);" title="Ver seguimiento del pedido">
-        <i class="fas fa-truck"></i>
-    </button>
-    <a href="admin.html" class="btn-admin-link" title="Panel de Administración">
-        <i class="fas fa-user-cog"></i>
-    </a>
-    <div class="cart-icon" id="cartIcon">
-        <i class="fas fa-shopping-cart"></i>
-        <span class="cart-badge" id="cartBadge">0</span>
-    </div>
-</div>
         </header>
 
-        <!-- Banner de bienvenida (se muestra si viene de QR) -->
-        <div id="welcomeBanner" style="display: none; background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 1rem; text-align: center; position: sticky; top: 120px; z-index: 80;">
-            <h3 style="margin: 0;"><i class="fas fa-utensils"></i> ¡Bienvenido a la Mesa <span id="welcomeTable">-</span>!</h3>
-            <p style="margin: 0.3rem 0 0; opacity: 0.8; font-size: 0.9rem;">Escanea el código QR para ver la carta digital</p>
+        <!-- ===== BANNER DE BIENVENIDA ===== -->
+        <div id="welcomeBanner" style="display: none;">
+            <i class="fas fa-utensils"></i> 
+            ¡Bienvenido a la Mesa <span id="welcomeTable">-</span>!
+            <span style="opacity: 0.8; font-size: 0.8rem; margin-left: 0.5rem;">
+                <i class="fas fa-qrcode"></i> Escanea el QR para ver la carta
+            </span>
         </div>
 
-        <!-- Categorías -->
+        <!-- ===== NAVEGACIÓN DE CATEGORÍAS ===== -->
         <nav class="categories-nav" id="categoriesNav">
             <!-- Generado dinámicamente -->
         </nav>
 
-        <!-- Menú -->
+        <!-- ===== MENÚ ===== -->
         <main class="menu-container" id="menuContainer">
             <!-- Generado dinámicamente -->
         </main>
 
-        <!-- Carrito -->
+        <!-- ===== CARRITO ===== -->
         <div class="cart-panel" id="cartPanel">
             <div class="cart-header">
                 <h2><i class="fas fa-shopping-cart"></i> Tu Pedido</h2>
@@ -79,10 +74,10 @@
             </div>
         </div>
 
-        <!-- Overlay -->
+        <!-- ===== OVERLAY ===== -->
         <div class="overlay" id="overlay"></div>
 
-        <!-- Panel de seguimiento de pedido -->
+        <!-- ===== PANEL DE SEGUIMIENTO ===== -->
         <div class="order-tracking-panel" id="orderTrackingPanel" style="display: none;">
             <div class="tracking-header">
                 <h3><i class="fas fa-truck"></i> Seguimiento del Pedido</h3>
@@ -119,7 +114,7 @@
             </div>
         </div>
 
-        <!-- Acceso rápido al admin -->
+        <!-- ===== ACCESO ADMIN (SOLO UNO) ===== -->
         <div class="admin-access-hint">
             <a href="admin.html" title="Panel de Administración">
                 <i class="fas fa-user-cog"></i> Admin
