@@ -112,6 +112,9 @@
                                         <option value="unpaid">💰 Pendientes de pago</option>
                                         <option value="paid">💳 Pagados</option>
                                     </select>
+                                    <button id="downloadReportBtn" class="btn-report">
+                                        <i class="fas fa-file-download"></i> Reporte
+                                    </button>
                                 </div>
                             </div>
                             <div id="ordersList">
@@ -280,6 +283,38 @@
                     </div>
                     <button type="submit" class="btn-primary">Guardar</button>
                 </form>
+            </div>
+        </div>
+        <!-- Modal de Reporte -->
+        <div class="modal-overlay" id="reportModal">
+            <div class="modal-content" style="max-width: 550px;">
+                <button class="modal-close" id="closeReportModal">&times;</button>
+                <h2 style="margin-bottom: 0.5rem;"><i class="fas fa-file-download"></i> Generar Reporte</h2>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Selecciona el período para el reporte de ventas</p>
+                
+                <div class="report-options">
+                    <div class="report-option selected" data-period="today">
+                        <div class="icon">📅</div>
+                        <div class="title">Hoy</div>
+                        <div class="subtitle">Pedidos del día actual</div>
+                    </div>
+                    <div class="report-option" data-period="week">
+                        <div class="icon">📆</div>
+                        <div class="title">Esta Semana</div>
+                        <div class="subtitle">Últimos 7 días</div>
+                    </div>
+                </div>
+                
+                <div class="report-preview" id="reportPreview">
+                    <div class="stat-row">
+                        <span>Cargando...</span>
+                        <span>-</span>
+                    </div>
+                </div>
+                
+                <button class="btn-download-confirm" id="confirmDownloadReport">
+                    <i class="fas fa-download"></i> Descargar Reporte
+                </button>
             </div>
         </div>
     </div>

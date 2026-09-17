@@ -712,6 +712,14 @@ if (elements.closeModal) {
     })
 }
 
+// Cerrar modal de reporte con tecla ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const reportModal = document.getElementById('reportModal')
+        if (reportModal) reportModal.classList.remove('active')
+    }
+})
+
 if (elements.orderModal) {
     elements.orderModal.addEventListener('click', (e) => {
         if (e.target === elements.orderModal) {
@@ -1199,8 +1207,502 @@ styles.textContent = `
     .btn-mark-paid:hover {
         background: #219a52;
     }
+
+    
 `
+
 document.head.appendChild(styles)
 
 // ===== INICIAR =====
 checkAuth()
+
+// ============================================
+// SISTEMA DE REPORTES
+// ============================================
+
+let selectedPeriod = 'today'
+
+// Elementos del modal de reporte
+const reportModal = document.getElementById('reportModal')
+const closeReportModal = document.getElementById('closeReportModal')
+const downloadReportBtn = document.getElementById('downloadReportBtn')
+const reportPreview = document.getElementById('reportPreview')
+const confirmDownloadReport = document.getElementById('confirmDownloadReport')
+
+// Abrir modal de reporte
+if (downloadReportBtn) {
+    downloadReportBtn.addEventListener('click', () => {
+        reportModal.classList.add('active')
+        updateReportPreview()
+    })
+}
+
+if (closeReportModal) {
+    closeReportModal.addEventListener('click', () => {
+        reportModal.classList.remove('active')
+    })
+}
+
+if (reportModal) {
+    reportModal.addEventListener('click', (e) => {
+        if (e.target === reportModal) {
+            reportModal.classList.remove('active')
+        }
+    })
+}
+
+// Cambiar período
+document.querySelectorAll('.report-option').forEach(option => {
+    option.addEventListener('click', () => {
+        document.querySelectorAll('.report-option').forEach(o => o.classList.remove('selected'))
+        option.classList.add('selected')
+        selectedPeriod = option.dataset.period
+        updateReportPreview()
+    })
+})
+
+// Actualizar vista previa del reporte
+const updateReportPreview = () => {
+    if (!reportPreview) return
+    
+    const orders = filterOrdersByPeriod(selectedPeriod)
+    
+    if (orders.length === 0) {
+        reportPreview.innerHTML = `
+            <div class="stat-row" style="text-align: center; color: #999; padding: 1rem;">
+                No hay pedidos en este período
+            </div>
+        `
+        confirmDownloadReport.disabled = true
+        return
+    }
+    
+    confirmDownloadReport.disabled = false
+    
+    // Estadísticas
+    const totalSales = orders.reduce((sum, o) => sum + Number(o.total), 0)
+    const paidOrders = orders.filter(o => o.payment_status === 'paid')
+    const paidAmount = paidOrders.reduce((sum, o) => sum + Number(o.total), 0)
+    const unpaidAmount = totalSales - paidAmount
+    
+    const dineIn = orders.filter(o => o.order_type === 'dine_in').length
+    const delivery = orders.filter(o => o.order_type === 'delivery').length
+    const takeaway = orders.filter(o => o.order_type === 'takeaway').length
+    
+    const avgOrder = orders.length > 0 ? totalSales / orders.length : 0
+    
+    reportPreview.innerHTML = `
+        <div class="stat-row">
+            <span>📊 Total de pedidos</span>
+            <span><strong>${orders.length}</strong></span>
+        </div>
+        <div class="stat-row">
+            <span>🪑 En Mesa</span>
+            <span>${dineIn}</span>
+        </div>
+        <div class="stat-row">
+            <span>🛵 Delivery</span>
+            <span>${delivery}</span>
+        </div>
+        <div class="stat-row">
+            <span>🛍️ Para Llevar</span>
+            <span>${takeaway}</span>
+        </div>
+        <div class="stat-row">
+            <span>💳 Pagados</span>
+            <span>${paidOrders.length} ($${paidAmount.toFixed(2)})</span>
+        </div>
+        <div class="stat-row">
+            <span>💰 Pendientes de pago</span>
+            <span>${orders.length - paidOrders.length} ($${unpaidAmount.toFixed(2)})</span>
+        </div>
+        <div class="stat-row">
+            <span>📈 Ticket promedio</span>
+            <span>$${avgOrder.toFixed(2)}</span>
+        </div>
+        <div class="stat-row">
+            <span>💵 VENTAS TOTALES</span>
+            <span>$${totalSales.toFixed(2)}</span>
+        </div>
+    `
+}
+
+// Filtrar pedidos por período
+const filterOrdersByPeriod = (period) => {
+    const now = new Date()
+    let startDate
+    
+    if (period === 'today') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    } else if (period === 'week') {
+        startDate = new Date(now)
+        startDate.setDate(now.getDate() - 7)
+    }
+    
+    return state.orders.filter(order => {
+        const orderDate = new Date(order.created_at)
+        return orderDate >= startDate
+    })
+}
+
+// Generar y descargar el reporte
+if (confirmDownloadReport) {
+    confirmDownloadReport.addEventListener('click', () => {
+        generateAndDownloadReport(selectedPeriod)
+    })
+}
+
+const generateAndDownloadReport = (period) => {
+    const orders = filterOrdersByPeriod(period)
+    
+    if (orders.length === 0) {
+        showNotification('No hay pedidos en este período', 'warning')
+        return
+    }
+    
+    const now = new Date()
+    const periodText = period === 'today' ? 'Día Actual' : 'Última Semana'
+    const startDate = period === 'today' 
+        ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    
+    // Estadísticas
+    const totalSales = orders.reduce((sum, o) => sum + Number(o.total), 0)
+    const paidOrders = orders.filter(o => o.payment_status === 'paid')
+    const paidAmount = paidOrders.reduce((sum, o) => sum + Number(o.total), 0)
+    const unpaidAmount = totalSales - paidAmount
+    
+    const dineIn = orders.filter(o => o.order_type === 'dine_in')
+    const delivery = orders.filter(o => o.order_type === 'delivery')
+    const takeaway = orders.filter(o => o.order_type === 'takeaway')
+    
+    const avgOrder = orders.length > 0 ? totalSales / orders.length : 0
+    
+    // Productos más vendidos
+    const productStats = {}
+    orders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(item => {
+                if (!productStats[item.name]) {
+                    productStats[item.name] = { quantity: 0, revenue: 0 }
+                }
+                productStats[item.name].quantity += item.quantity
+                productStats[item.name].revenue += item.price * item.quantity
+            })
+        }
+    })
+    
+    const topProducts = Object.entries(productStats)
+        .sort((a, b) => b[1].quantity - a[1].quantity)
+        .slice(0, 10)
+    
+    // Generar HTML del reporte
+    const reportHTML = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Ventas - ${periodText}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 40px 20px;
+            background: #f5f6fa;
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #8e44ad;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            color: #8e44ad;
+            margin-bottom: 0.5rem;
+        }
+        .header p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border-left: 4px solid #8e44ad;
+        }
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        .stat-card .value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-card .value.money { color: #27ae60; }
+        .stat-card .value.orders { color: #3498db; }
+        .stat-card .value.pending { color: #e74c3c; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        table thead {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+        }
+        table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+        }
+        .badge.dine_in { background: #3498db; }
+        .badge.delivery { background: #e67e22; }
+        .badge.takeaway { background: #9b59b6; }
+        .badge.paid { background: #27ae60; }
+        .badge.unpaid { background: #e74c3c; }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            color: #999;
+            font-size: 0.85rem;
+        }
+        
+        .highlight-row {
+            background: #fef5e7 !important;
+            font-weight: bold;
+        }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; padding: 20px; }
+            .no-print { display: none; }
+        }
+        
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #8e44ad;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(142, 68, 173, 0.3);
+        }
+        .print-btn:hover { background: #7d3c98; }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    
+    <div class="container">
+        <div class="header">
+            <h1>📊 Reporte de Ventas</h1>
+            <p><strong>Período:</strong> ${periodText}</p>
+            <p><strong>Desde:</strong> ${startDate.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p><strong>Hasta:</strong> ${now.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p><strong>Generado:</strong> ${now.toLocaleString('es-CL')}</p>
+        </div>
+        
+        <div class="section">
+            <h2>💰 Resumen Financiero</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Ventas Totales</div>
+                    <div class="value money">$${totalSales.toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Pagado</div>
+                    <div class="value money">$${paidAmount.toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Pendiente</div>
+                    <div class="value pending">$${unpaidAmount.toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Ticket Promedio</div>
+                    <div class="value">$${avgOrder.toFixed(2)}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📦 Resumen de Pedidos</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Total Pedidos</div>
+                    <div class="value orders">${orders.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">🪑 En Mesa</div>
+                    <div class="value orders">${dineIn.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">🛵 Delivery</div>
+                    <div class="value orders">${delivery.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">🛍️ Para Llevar</div>
+                    <div class="value orders">${takeaway.length}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🏆 Productos Más Vendidos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Ingresos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${topProducts.length > 0 ? topProducts.map((product, index) => `
+                        <tr>
+                            <td><strong>${index + 1}</strong></td>
+                            <td>${product[0]}</td>
+                            <td>${product[1].quantity} unidades</td>
+                            <td>$${product[1].revenue.toFixed(2)}</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="4" style="text-align: center; color: #999;">No hay datos</td></tr>'}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>📋 Detalle de Pedidos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Hora</th>
+                        <th>Tipo</th>
+                        <th>Cliente</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Pago</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${orders.map(order => `
+                        <tr>
+                            <td><strong>#${order.id}</strong></td>
+                            <td>${new Date(order.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</td>
+                            <td>
+                                <span class="badge ${order.order_type || 'dine_in'}">
+                                    ${order.order_type === 'dine_in' ? 'Mesa ' + (order.table_number || 'N/A') : 
+                                      order.order_type === 'delivery' ? 'Delivery' : 
+                                      order.order_type === 'takeaway' ? 'Para Llevar' : 'Mesa'}
+                                </span>
+                            </td>
+                            <td>${order.customer_name || 'Cliente'}</td>
+                            <td><strong>$${Number(order.total).toFixed(2)}</strong></td>
+                            <td>${getStatusText(order.status)}</td>
+                            <td>
+                                <span class="badge ${order.payment_status === 'paid' ? 'paid' : 'unpaid'}">
+                                    ${order.payment_status === 'paid' ? '✓ Pagado' : '⏳ Pendiente'}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('')}
+                    <tr class="highlight-row">
+                        <td colspan="4" style="text-align: right;"><strong>TOTAL:</strong></td>
+                        <td><strong>$${totalSales.toFixed(2)}</strong></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p>📱 Sistema de Carta Digital</p>
+            <p>Reporte generado automáticamente - ${now.toLocaleString('es-CL')}</p>
+        </div>
+    </div>
+</body>
+</html>
+    `
+    
+    // Descargar el archivo
+    const blob = new Blob([reportHTML], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const dateStr = now.toISOString().split('T')[0]
+    a.download = `reporte-${period}-${dateStr}.html`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    // Cerrar modal y notificar
+    reportModal.classList.remove('active')
+    showNotification(`✅ Reporte ${periodText} descargado`, 'success')
+}

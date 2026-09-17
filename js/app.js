@@ -307,13 +307,9 @@ const renderMenu = () => {
                         <div class="menu-item">
                             ${item.image_url ? 
                                 `<img src="${item.image_url}" alt="${item.name}" class="menu-item-image" 
-                                      onerror="this.style.display='none'; this.parentElement.querySelector('.fallback-image').style.display='flex'">` : 
+                                      onerror="this.style.display='none'">` : 
                                 ''
                             }
-                            <div class="fallback-image" style="${item.image_url ? 'display:none;' : ''} 
-                                background: #f0f0f0; height: 150px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-utensils" style="font-size: 3rem; color: #ccc;"></i>
-                            </div>
                             <div class="menu-item-content">
                                 <div class="menu-item-name">${item.name}</div>
                                 ${item.description ? `<div class="menu-item-description">${item.description}</div>` : ''}
