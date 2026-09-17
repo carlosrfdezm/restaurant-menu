@@ -73,81 +73,87 @@
 
         <!-- ===== PANEL DEL CARRITO ===== -->
         <div class="cart-panel" id="cartPanel">
+            <!-- Header FIJO -->
             <div class="cart-header">
                 <h2><i class="fas fa-shopping-cart"></i> Tu Pedido</h2>
                 <button class="close-cart" id="closeCart">&times;</button>
             </div>
             
-            <!-- Info del tipo de pedido -->
+            <!-- Tipo de pedido FIJO -->
             <div class="cart-order-type" id="cartOrderType">
                 <i class="fas fa-chair"></i> En Mesa
             </div>
             
-            <div class="cart-items" id="cartItems">
-                <div style="text-align: center; padding: 2rem; color: #999;">
-                    <i class="fas fa-shopping-basket" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                    <p>Tu carrito está vacío</p>
+            <!-- Contenedor con SCROLL -->
+            <div class="cart-scrollable">
+                <!-- Items del carrito -->
+                <div class="cart-items" id="cartItems">
+                    <div style="text-align: center; padding: 2rem; color: #999;">
+                        <i class="fas fa-shopping-basket" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <p>Tu carrito está vacío</p>
+                    </div>
+                </div>
+                
+                <!-- Formulario de delivery -->
+                <div class="delivery-form" id="deliveryForm" style="display: none;">
+                    <h3><i class="fas fa-motorcycle"></i> Datos de Delivery</h3>
+                    <div class="form-group">
+                        <label>Nombre completo *</label>
+                        <input type="text" id="customerName" placeholder="Tu nombre">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono *</label>
+                        <input type="tel" id="customerPhone" placeholder="+56 9 1234 5678">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección *</label>
+                        <input type="text" id="customerAddress" placeholder="Calle, número, depto">
+                    </div>
+                    <div class="form-group">
+                        <label>Referencia</label>
+                        <input type="text" id="customerReference" placeholder="Ej: Casa azul">
+                    </div>
+                    <div class="form-group">
+                        <label>Notas adicionales</label>
+                        <textarea id="orderNotes" placeholder="Sin cebolla, salsa aparte..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Método de pago</label>
+                        <select id="paymentMethod">
+                            <option value="cash">Efectivo</option>
+                            <option value="card">Tarjeta (al recibir)</option>
+                            <option value="transfer">Transferencia</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Formulario de takeaway -->
+                <div class="takeaway-form" id="takeawayForm" style="display: none;">
+                    <h3><i class="fas fa-shopping-bag"></i> Datos para Llevar</h3>
+                    <div class="form-group">
+                        <label>Nombre *</label>
+                        <input type="text" id="takeawayName" placeholder="Tu nombre">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" id="takeawayPhone" placeholder="+56 9 1234 5678">
+                    </div>
+                    <div class="form-group">
+                        <label>Notas adicionales</label>
+                        <textarea id="takeawayNotes" placeholder="Sin cebolla, salsa aparte..."></textarea>
+                    </div>
                 </div>
             </div>
             
-            <!-- Formulario de delivery (oculto por defecto) -->
-            <div class="delivery-form" id="deliveryForm" style="display: none;">
-                <h3><i class="fas fa-motorcycle"></i> Datos de Delivery</h3>
-                <div class="form-group">
-                    <label>Nombre completo *</label>
-                    <input type="text" id="customerName" placeholder="Tu nombre" required>
-                </div>
-                <div class="form-group">
-                    <label>Teléfono *</label>
-                    <input type="tel" id="customerPhone" placeholder="+56 9 1234 5678" required>
-                </div>
-                <div class="form-group">
-                    <label>Dirección *</label>
-                    <input type="text" id="customerAddress" placeholder="Calle, número, depto" required>
-                </div>
-                <div class="form-group">
-                    <label>Referencia</label>
-                    <input type="text" id="customerReference" placeholder="Ej: Casa azul, portón negro">
-                </div>
-                <div class="form-group">
-                    <label>Notas adicionales</label>
-                    <textarea id="orderNotes" rows="2" placeholder="Sin cebolla, salsa aparte, etc."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Método de pago</label>
-                    <select id="paymentMethod">
-                        <option value="cash">Efectivo</option>
-                        <option value="card">Tarjeta (al recibir)</option>
-                        <option value="transfer">Transferencia</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Formulario de takeaway (oculto por defecto) -->
-            <div class="takeaway-form" id="takeawayForm" style="display: none;">
-                <h3><i class="fas fa-shopping-bag"></i> Datos para Llevar</h3>
-                <div class="form-group">
-                    <label>Nombre *</label>
-                    <input type="text" id="takeawayName" placeholder="Tu nombre" required>
-                </div>
-                <div class="form-group">
-                    <label>Teléfono</label>
-                    <input type="tel" id="takeawayPhone" placeholder="+56 9 1234 5678">
-                </div>
-                <div class="form-group">
-                    <label>Notas adicionales</label>
-                    <textarea id="takeawayNotes" rows="2" placeholder="Sin cebolla, salsa aparte, etc."></textarea>
-                </div>
-            </div>
-            
+            <!-- Resumen FIJO ABAJO -->
             <div class="cart-summary">
-                <!-- Subtotal -->
+                <!-- Subtotal (solo delivery) -->
                 <div class="cart-subtotal" id="cartSubtotalRow" style="display: none;">
                     <span>Subtotal:</span>
                     <span id="cartSubtotal">$0.00</span>
                 </div>
                 
-                <!-- Costo de envío -->
+                <!-- Costo de envío (solo delivery) -->
                 <div class="cart-delivery-fee" id="cartDeliveryFeeRow" style="display: none;">
                     <span><i class="fas fa-motorcycle"></i> Envío:</span>
                     <span id="cartDeliveryFee">$0.00</span>

@@ -213,7 +213,10 @@ body {
     opacity: 0.6;
 }
 
-/* Carrito */
+/* ============================================
+   CARRITO - LAYOUT MEJORADO
+   ============================================ */
+
 .cart-panel {
     position: fixed;
     right: -400px;
@@ -226,32 +229,81 @@ body {
     z-index: 1000;
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Importante: evita scroll externo */
 }
 
 .cart-panel.open {
     right: 0;
 }
 
+/* Header del carrito - FIJO */
 .cart-header {
-    padding: 1.5rem;
+    padding: 1.2rem 1.5rem;
     border-bottom: 1px solid #eee;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0; /* No se encoge */
+    background: white;
+    z-index: 2;
 }
 
-.close-cart {
-    background: none;
-    border: none;
-    font-size: 2rem;
-    cursor: pointer;
-    color: #999;
+.cart-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
 }
 
-.cart-items {
+/* Info del tipo de pedido - FIJO */
+.cart-order-type {
+    padding: 0.6rem 1rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    text-align: center;
+    font-weight: 600;
+    color: var(--secondary);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.cart-order-type i {
+    color: var(--primary);
+}
+
+/* CONTENEDOR CON SCROLL - Aquí va todo el contenido scrolleable */
+.cart-scrollable {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem;
+    overflow-x: hidden;
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0; /* Importante para flexbox */
+}
+
+/* Scrollbar personalizado */
+.cart-scrollable::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cart-scrollable::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.cart-scrollable::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+.cart-scrollable::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* Items del carrito */
+.cart-items {
+    padding: 0.5rem 1rem;
 }
 
 .cart-item {
@@ -259,36 +311,53 @@ body {
     justify-content: space-between;
     padding: 0.8rem 0;
     border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+}
+
+.cart-item:last-child {
+    border-bottom: none;
 }
 
 .cart-item-info {
     flex: 1;
+    min-width: 0;
 }
 
 .cart-item-name {
     font-weight: 500;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.2rem;
 }
 
 .cart-item-price {
     color: var(--primary);
     font-weight: bold;
+    font-size: 0.85rem;
 }
 
 .cart-item-controls {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.5rem;
+    flex-shrink: 0;
 }
 
 .cart-item-controls button {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border: 1px solid #ddd;
     border-radius: 50%;
     background: white;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.9rem;
     transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
 }
 
 .cart-item-controls button:hover {
@@ -301,38 +370,173 @@ body {
     font-weight: bold;
     min-width: 20px;
     text-align: center;
+    font-size: 0.9rem;
 }
 
+/* ============================================
+   FORMULARIO DE DELIVERY - COMPACTO
+   ============================================ */
+
+.delivery-form,
+.takeaway-form {
+    padding: 1rem;
+    background: #f8f9fa;
+    margin: 0.5rem 1rem 1rem 1rem;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.delivery-form h3,
+.takeaway-form h3 {
+    margin: 0 0 0.8rem 0;
+    font-size: 0.9rem;
+    color: var(--secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.delivery-form .form-group,
+.takeaway-form .form-group {
+    margin-bottom: 0.6rem;
+}
+
+.delivery-form label,
+.takeaway-form label {
+    display: block;
+    font-size: 0.78rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.delivery-form input,
+.delivery-form textarea,
+.delivery-form select,
+.takeaway-form input,
+.takeaway-form textarea {
+    width: 100%;
+    padding: 0.5rem 0.7rem;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    background: white;
+}
+
+.delivery-form input:focus,
+.delivery-form textarea:focus,
+.delivery-form select:focus,
+.takeaway-form input:focus,
+.takeaway-form textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.1);
+}
+
+.delivery-form textarea,
+.takeaway-form textarea {
+    resize: vertical;
+    min-height: 50px;
+    max-height: 80px;
+}
+
+/* ============================================
+   RESUMEN DEL CARRITO - FIJO ABAJO
+   ============================================ */
+
 .cart-summary {
-    padding: 1.5rem;
-    border-top: 1px solid #eee;
-    background: #fafafa;
+    padding: 1rem 1.5rem;
+    border-top: 2px solid #f0f0f0;
+    background: white;
+    flex-shrink: 0; /* No se encoge */
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+    z-index: 2;
+}
+
+.cart-subtotal,
+.cart-delivery-fee {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.cart-delivery-fee {
+    color: var(--primary);
+    font-weight: 600;
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px dashed #e0e0e0;
 }
 
 .cart-total {
     display: flex;
     justify-content: space-between;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: bold;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
+    padding-top: 0.4rem;
+}
+
+.cart-total span:last-child {
+    color: var(--primary);
 }
 
 .btn-place-order {
     width: 100%;
-    padding: 1rem;
+    padding: 0.9rem;
     background: var(--success);
     color: white;
     border: none;
-    border-radius: var(--border-radius);
-    font-size: 1.1rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
-.btn-place-order:hover {
+.btn-place-order:hover:not(:disabled) {
     transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
 }
 
+.btn-place-order:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .cart-panel {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .cart-header {
+        padding: 1rem;
+    }
+    
+    .delivery-form,
+    .takeaway-form {
+        margin: 0.5rem;
+        padding: 0.8rem;
+    }
+    
+    .cart-summary {
+        padding: 0.8rem 1rem;
+    }
+}
 /* Overlay */
 .overlay {
     display: none;
