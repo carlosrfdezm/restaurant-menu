@@ -14,6 +14,7 @@
             <div class="header-content">
                 <h1>🍽️ Carta Digital</h1>
                 <div class="header-actions">
+                    <!-- Botón de seguimiento -->
                     <button id="trackingBtn" style="display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--secondary); padding: 0.3rem 0.6rem; border-radius: 8px; background: #f0f0f0; position: relative;" title="Seguir mi pedido">
                         <i class="fas fa-truck"></i>
                         <span class="badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; border-radius: 50%; padding: 0.1rem 0.4rem; font-size: 0.6rem; font-weight: bold;">1</span>
@@ -45,7 +46,7 @@
                 </button>
             </div>
             
-            <!-- Selector de mesa (solo para dine_in) -->
+            <!-- Selector de mesa -->
             <div class="table-selector" id="tableSelector">
                 <label for="tableNumber">Mesa:</label>
                 <input type="number" id="tableNumber" placeholder="N°" min="1" max="99" required>
@@ -147,19 +148,16 @@
             
             <!-- Resumen FIJO ABAJO -->
             <div class="cart-summary">
-                <!-- Subtotal (solo delivery) -->
                 <div class="cart-subtotal" id="cartSubtotalRow" style="display: none;">
                     <span>Subtotal:</span>
                     <span id="cartSubtotal">$0.00</span>
                 </div>
                 
-                <!-- Costo de envío (solo delivery) -->
                 <div class="cart-delivery-fee" id="cartDeliveryFeeRow" style="display: none;">
                     <span><i class="fas fa-motorcycle"></i> Envío:</span>
                     <span id="cartDeliveryFee">$0.00</span>
                 </div>
                 
-                <!-- Total -->
                 <div class="cart-total">
                     <span>Total:</span>
                     <span id="cartTotal">$0.00</span>
@@ -186,6 +184,7 @@
                 </div>
             </div>
             <div id="trackingContent">
+                <!-- Estados del pedido -->
                 <div class="tracking-status">
                     <div class="status-step" id="stepPending">
                         <i class="fas fa-clock"></i>
@@ -207,6 +206,8 @@
                         <span id="stepDeliveredLabel">Entregado</span>
                     </div>
                 </div>
+                
+                <!-- Info del pedido -->
                 <div class="tracking-info">
                     <p><strong>Pedido #<span id="trackingOrderId">-</span></strong></p>
                     <p><strong>Tipo:</strong> <span id="trackingOrderType">-</span></p>
@@ -215,8 +216,10 @@
                     <p><strong>Estado:</strong> <span id="trackingStatus" class="status-pending">Pendiente</span></p>
                     <p><strong>Fecha:</strong> <span id="trackingDate">-</span></p>
                 </div>
+                
+                <!-- Contenedor del ticket -->
                 <div id="trackingItems" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
-                    <!-- Items del pedido -->
+                    <!-- El ticket se genera aquí dinámicamente -->
                 </div>
             </div>
         </div>
