@@ -302,32 +302,84 @@ const renderOrders = () => {
         return
     }
     
-    elements.ordersList.innerHTML = filtered.map(order => `
-        <div class="order-card">
-            <div class="info">
-                <span class="id">#${order.id}</span>
-                <span class="table">Mesa ${order.table_number || 'N/A'}</span>
-                <span class="customer">${order.customer_name || 'Cliente'}</span>
-                <span class="total">$${Number(order.total).toFixed(2)}</span>
-                <span class="status-badge ${order.status}">${getStatusText(order.status)}</span>
+    elements.ordersList.innerHTML = filtered.map(order => {
+        // Configuración según tipo
+        const typeConfig = {
+            'dine_in': { 
+                icon: 'fa-chair', 
+                label: `Mesa ${order.table_number || 'N/A'}`,
+                class: 'dine_in',
+                color: '#3498db'
+            },
+            'delivery': { 
+                icon: 'fa-motorcycle', 
+                label: 'Delivery',
+                class: 'delivery',
+                color: '#e67e22'
+            },
+            'takeaway': { 
+                icon: 'fa-shopping-bag', 
+                label: 'Para Llevar',
+                class: 'takeaway',
+                color: '#9b59b6'
+            }
+        }
+        const type = typeConfig[order.order_type] || typeConfig['dine_in']
+        
+        // Info adicional según tipo
+        let extraInfo = ''
+        if (order.order_type === 'delivery' && order.customer_address) {
+            extraInfo = `
+                <div class="order-extra-info">
+                    <i class="fas fa-map-marker-alt"></i> ${order.customer_address.substring(0, 40)}${order.customer_address.length > 40 ? '...' : ''}
+                </div>
+            `
+        } else if (order.order_type === 'delivery' && order.customer_phone) {
+            extraInfo = `
+                <div class="order-extra-info">
+                    <i class="fas fa-phone"></i> ${order.customer_phone}
+                </div>
+            `
+        }
+        
+        return `
+            <div class="order-card" style="border-left: 4px solid ${type.color};" data-id="${order.id}">
+                <div class="info">
+                    <div class="order-header-line">
+                        <span class="id">#${order.id}</span>
+                        <span class="order-type-badge ${type.class}">
+                            <i class="fas ${type.icon}"></i> ${type.label}
+                        </span>
+                        <span class="customer">${order.customer_name || 'Cliente'}</span>
+                    </div>
+                    ${extraInfo}
+                    <div class="order-details-line">
+                        <span class="total">$${Number(order.total).toFixed(2)}</span>
+                        <span class="status-badge ${order.status}">${getStatusText(order.status)}</span>
+                        <span class="order-time">
+                            <i class="fas fa-clock"></i> ${new Date(order.created_at).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}
+                        </span>
+                    </div>
+                </div>
+                <div class="actions">
+                    <select class="order-status-select" data-id="${order.id}">
+                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>⏳ Pendiente</option>
+                        <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>🔪 Preparando</option>
+                        <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>✅ Listo</option>
+                        <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>📦 Entregado</option>
+                    </select>
+                    <button class="btn-view" data-id="${order.id}" title="Ver detalle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-delete" data-id="${order.id}" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
-            <div class="actions">
-                <select class="order-status-select" data-id="${order.id}">
-                    <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>⏳ Pendiente</option>
-                    <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>🔪 Preparando</option>
-                    <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>✅ Listo</option>
-                    <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>📦 Entregado</option>
-                </select>
-                <button class="btn-view" data-id="${order.id}" title="Ver detalle">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-delete" data-id="${order.id}" title="Eliminar">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </div>
-    `).join('')
+        `
+    }).join('')
     
+    // Event listeners
     document.querySelectorAll('.order-status-select').forEach(select => {
         select.addEventListener('change', async (e) => {
             const id = parseInt(select.dataset.id)
@@ -395,37 +447,229 @@ const deleteOrderHandler = async (id) => {
     }
 }
 
-// ===== VER DETALLE =====
+// ============================================
+// VER DETALLE DEL PEDIDO (CON TIPO Y DATOS)
+// ============================================
+
 const showOrderDetail = (order) => {
     if (!elements.orderDetail) return
     
+    // Info según tipo de pedido
+    const orderTypeInfo = {
+        'dine_in': { 
+            icon: 'fa-chair', 
+            text: 'En Mesa', 
+            color: '#3498db',
+            bgColor: '#ebf5fb'
+        },
+        'delivery': { 
+            icon: 'fa-motorcycle', 
+            text: 'Delivery a Domicilio', 
+            color: '#e67e22',
+            bgColor: '#fef5e7'
+        },
+        'takeaway': { 
+            icon: 'fa-shopping-bag', 
+            text: 'Para Llevar', 
+            color: '#9b59b6',
+            bgColor: '#f4ecf7'
+        }
+    }
+    const typeInfo = orderTypeInfo[order.order_type] || orderTypeInfo['dine_in']
+    
+    // Construir la sección de información según el tipo
+    let clientInfoHTML = ''
+    
+    if (order.order_type === 'dine_in') {
+        clientInfoHTML = `
+            <div class="detail-section">
+                <h4><i class="fas fa-chair"></i> Información de Mesa</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Mesa:</span>
+                        <span class="detail-value"><strong>#${order.table_number || 'N/A'}</strong></span>
+                    </div>
+                </div>
+            </div>
+        `
+    } else if (order.order_type === 'delivery') {
+        clientInfoHTML = `
+            <div class="detail-section">
+                <h4><i class="fas fa-user"></i> Datos del Cliente</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Nombre:</span>
+                        <span class="detail-value"><strong>${order.customer_name || 'N/A'}</strong></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Teléfono:</span>
+                        <span class="detail-value">
+                            <a href="tel:${order.customer_phone || ''}" style="color: #3498db; text-decoration: none;">
+                                <i class="fas fa-phone"></i> ${order.customer_phone || 'N/A'}
+                            </a>
+                        </span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Dirección:</span>
+                        <span class="detail-value">
+                            <i class="fas fa-map-marker-alt" style="color: #e74c3c;"></i>
+                            ${order.customer_address || 'N/A'}
+                        </span>
+                    </div>
+                    ${order.customer_reference ? `
+                        <div class="detail-item full-width">
+                            <span class="detail-label">Referencia:</span>
+                            <span class="detail-value">${order.customer_reference}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            ${order.notes ? `
+                <div class="detail-section">
+                    <h4><i class="fas fa-sticky-note"></i> Notas del Cliente</h4>
+                    <div class="detail-notes">${order.notes}</div>
+                </div>
+            ` : ''}
+            
+            <div class="detail-section">
+                <h4><i class="fas fa-credit-card"></i> Información de Pago</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Método:</span>
+                        <span class="detail-value">
+                            ${order.payment_method === 'cash' ? '💵 Efectivo' : 
+                              order.payment_method === 'card' ? '💳 Tarjeta' : 
+                              order.payment_method === 'transfer' ? '🏦 Transferencia' : 'Efectivo'}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Tiempo estimado:</span>
+                        <span class="detail-value">${order.estimated_time || 30} min</span>
+                    </div>
+                </div>
+            </div>
+        `
+    } else if (order.order_type === 'takeaway') {
+        clientInfoHTML = `
+            <div class="detail-section">
+                <h4><i class="fas fa-user"></i> Datos del Cliente</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Nombre:</span>
+                        <span class="detail-value"><strong>${order.customer_name || 'N/A'}</strong></span>
+                    </div>
+                    ${order.customer_phone ? `
+                        <div class="detail-item">
+                            <span class="detail-label">Teléfono:</span>
+                            <span class="detail-value">
+                                <a href="tel:${order.customer_phone}" style="color: #3498db; text-decoration: none;">
+                                    <i class="fas fa-phone"></i> ${order.customer_phone}
+                                </a>
+                            </span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            ${order.notes ? `
+                <div class="detail-section">
+                    <h4><i class="fas fa-sticky-note"></i> Notas del Cliente</h4>
+                    <div class="detail-notes">${order.notes}</div>
+                </div>
+            ` : ''}
+        `
+    }
+    
+    // Construir items
     const itemsHTML = order.items?.map(item => `
-        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0;">
-            <span>${item.quantity}x ${item.name}</span>
-            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+        <div class="detail-item-row">
+            <span class="item-qty">${item.quantity}x</span>
+            <span class="item-name">${item.name}</span>
+            <span class="item-price">$${(item.price * item.quantity).toFixed(2)}</span>
         </div>
     `).join('') || '<p>No hay items</p>'
     
+    // Estado del pago
+    const paymentStatus = order.payment_status === 'paid' 
+        ? '<span style="background: #27ae60; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">💳 PAGADO</span>'
+        : '<span style="background: #e74c3c; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">💰 PENDIENTE PAGO</span>'
+    
     elements.orderDetail.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
-            <div><strong>Pedido #${order.id}</strong></div>
-            <div><strong>Mesa:</strong> ${order.table_number || 'N/A'}</div>
-            <div><strong>Cliente:</strong> ${order.customer_name || 'Cliente'}</div>
-            <div><strong>Estado:</strong> <span class="status-badge ${order.status}">${getStatusText(order.status)}</span></div>
-            <div><strong>Fecha:</strong> ${new Date(order.created_at).toLocaleString()}</div>
+        <!-- Header con tipo de pedido -->
+        <div class="order-detail-header" style="background: ${typeInfo.bgColor}; border-left: 4px solid ${typeInfo.color};">
+            <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
+                <i class="fas ${typeInfo.icon}" style="font-size: 1.5rem; color: ${typeInfo.color};"></i>
+                <div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: ${typeInfo.color};">
+                        ${typeInfo.text}
+                    </div>
+                    <div style="font-size: 0.85rem; color: #666;">
+                        Pedido #${order.id} • ${new Date(order.created_at).toLocaleString()}
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                <span class="status-badge ${order.status}" style="padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; color: white;">
+                    ${getStatusText(order.status)}
+                </span>
+                ${paymentStatus}
+            </div>
         </div>
-        <h4 style="margin: 1rem 0 0.5rem;">Items:</h4>
-        ${itemsHTML}
-        <div style="text-align: right; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #eee; font-size: 1.2rem; font-weight: bold;">
-            Total: $${Number(order.total).toFixed(2)}
+        
+        <!-- Info del cliente -->
+        ${clientInfoHTML}
+        
+        <!-- Items del pedido -->
+        <div class="detail-section">
+            <h4><i class="fas fa-utensils"></i> Productos (${order.items?.length || 0})</h4>
+            <div class="detail-items">
+                ${itemsHTML}
+            </div>
+        </div>
+        
+        <!-- Totales -->
+        <div class="detail-totals">
+            ${order.order_type === 'delivery' ? `
+                <div class="detail-total-row">
+                    <span>Subtotal:</span>
+                    <span>$${Number(order.subtotal || 0).toFixed(2)}</span>
+                </div>
+                <div class="detail-total-row" style="color: #e67e22;">
+                    <span><i class="fas fa-motorcycle"></i> Envío:</span>
+                    <span>$${Number(order.delivery_fee || 0).toFixed(2)}</span>
+                </div>
+            ` : ''}
+            <div class="detail-total-row total-final">
+                <span>TOTAL:</span>
+                <span>$${Number(order.total).toFixed(2)}</span>
+            </div>
+        </div>
+        
+        <!-- Acciones -->
+        <div class="detail-actions">
+            ${order.order_type === 'delivery' && order.customer_phone ? `
+                <a href="https://wa.me/${(order.customer_phone || '').replace(/[^0-9]/g, '')}?text=Hola ${order.customer_name}, tu pedido #${order.id} está en camino" 
+                   target="_blank"
+                   class="btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </a>
+            ` : ''}
+            ${order.order_type === 'delivery' && order.customer_address ? `
+                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer_address)}" 
+                   target="_blank"
+                   class="btn-map">
+                    <i class="fas fa-map-marked-alt"></i> Ver Mapa
+                </a>
+            ` : ''}
+            <button class="btn-print-order" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
         </div>
     `
     
-    if (elements.orderModal) {
-        elements.orderModal.classList.add('active')
-    }
+    elements.orderModal.classList.add('active')
 }
-
 // ===== CERRAR MODAL =====
 if (elements.closeModal) {
     elements.closeModal.addEventListener('click', () => {

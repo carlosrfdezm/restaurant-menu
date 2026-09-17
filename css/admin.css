@@ -476,3 +476,353 @@
         font-size: 0.8rem;
     }
 }
+
+/* ============================================
+   DETALLE DEL PEDIDO - DISEÑO MEJORADO
+   ============================================ */
+
+.order-detail-header {
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    background: #f8f9fa;
+}
+
+.detail-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-section:last-of-type {
+    border-bottom: none;
+}
+
+.detail-section h4 {
+    margin: 0 0 0.8rem 0;
+    font-size: 0.95rem;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.detail-section h4 i {
+    color: var(--accent);
+    font-size: 1rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: 0.9rem;
+    color: #2c3e50;
+    word-break: break-word;
+}
+
+.detail-value a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.detail-value a:hover {
+    text-decoration: underline;
+}
+
+.detail-notes {
+    background: #fff9e6;
+    border-left: 3px solid #f39c12;
+    padding: 0.8rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #7d6608;
+    font-style: italic;
+}
+
+/* Items del pedido */
+.detail-items {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.detail-item-row {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
+}
+
+.detail-item-row:last-child {
+    border-bottom: none;
+}
+
+.item-qty {
+    background: var(--accent);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.item-name {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.item-price {
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+/* Totales */
+.detail-totals {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.detail-total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+    font-size: 0.95rem;
+    color: #666;
+}
+
+.detail-total-row.total-final {
+    border-top: 2px solid #2c3e50;
+    margin-top: 0.5rem;
+    padding-top: 0.8rem;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.detail-total-row.total-final span:last-child {
+    color: #e74c3c;
+}
+
+/* Acciones */
+.detail-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.detail-actions button,
+.detail-actions a {
+    flex: 1;
+    min-width: 120px;
+    padding: 0.7rem 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-whatsapp {
+    background: #25D366;
+    color: white;
+}
+
+.btn-whatsapp:hover {
+    background: #1da851;
+    transform: translateY(-2px);
+}
+
+.btn-map {
+    background: #4285f4;
+    color: white;
+}
+
+.btn-map:hover {
+    background: #3367d6;
+    transform: translateY(-2px);
+}
+
+.btn-print-order {
+    background: #2c3e50;
+    color: white;
+}
+
+.btn-print-order:hover {
+    background: #1a252f;
+    transform: translateY(-2px);
+}
+
+/* Etiqueta de tipo de pedido en la lista */
+.order-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+}
+
+.order-type-badge.dine_in {
+    background: #3498db;
+}
+
+.order-type-badge.delivery {
+    background: #e67e22;
+}
+
+.order-type-badge.takeaway {
+    background: #9b59b6;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .detail-actions button,
+    .detail-actions a {
+        min-width: 100%;
+    }
+}
+
+/* ============================================
+   TARJETAS DE PEDIDO MEJORADAS
+   ============================================ */
+
+.order-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.order-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.order-card .info {
+    flex: 1;
+    min-width: 250px;
+}
+
+.order-header-line {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.4rem;
+}
+
+.order-header-line .id {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.order-header-line .customer {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.order-extra-info {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.order-extra-info i {
+    color: var(--accent);
+}
+
+.order-details-line {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.order-details-line .total {
+    font-weight: bold;
+    color: #e74c3c;
+    font-size: 1.05rem;
+}
+
+.order-details-line .order-time {
+    color: #999;
+    font-size: 0.8rem;
+}
+
+.order-card .actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .order-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .order-card .actions {
+        justify-content: flex-end;
+    }
+    
+    .order-header-line {
+        flex-wrap: wrap;
+    }
+}
+
