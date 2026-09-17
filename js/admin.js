@@ -1,4 +1,3 @@
-// ===== ADMIN.JS - COMPLETO =====
 import { 
     signIn,
     signOut,
@@ -13,7 +12,9 @@ import {
     deleteItem,
     getOrders,
     updateOrderStatus,
-    deleteOrder
+    deleteOrder,
+    markOrderAsPaid,
+    markOrderAsUnpaid
 } from './supabase.js'
 
 // ===== ESTADO =====
@@ -23,6 +24,7 @@ const state = {
     sections: [],
     items: [],
     filterStatus: 'all',
+    filterPayment: 'all',
     editingSection: null,
     editingItem: null
 }
@@ -46,10 +48,10 @@ const elements = {
     pendingBadge: $('pendingBadge'),
     ordersList: $('ordersList'),
     filterStatus: $('filterStatus'),
+    filterPayment: $('filterPayment'),
     orderModal: $('orderModal'),
     orderDetail: $('orderDetail'),
     closeModal: $('closeModal'),
-    // QR Elements
     qrTableNumber: $('qrTableNumber'),
     qrColor: $('qrColor'),
     qrBgColor: $('qrBgColor'),
@@ -63,7 +65,6 @@ const elements = {
     generateSingleQRBtn: $('generateSingleQRBtn'),
     downloadQRBtn: $('downloadQRBtn'),
     generateAllQRBtn: $('generateAllQRBtn'),
-    // Section Elements
     sectionModal: $('sectionModal'),
     sectionForm: $('sectionForm'),
     sectionModalTitle: $('sectionModalTitle'),
@@ -72,7 +73,6 @@ const elements = {
     closeSectionModal: $('closeSectionModal'),
     sectionsList: $('sectionsList'),
     addSectionBtn: $('addSectionBtn'),
-    // Item Elements
     itemModal: $('itemModal'),
     itemForm: $('itemForm'),
     itemModalTitle: $('itemModalTitle'),
@@ -192,10 +192,17 @@ if (elements.refreshBtn) {
     })
 }
 
-// ===== FILTRO =====
+// ===== FILTROS =====
 if (elements.filterStatus) {
     elements.filterStatus.addEventListener('change', (e) => {
         state.filterStatus = e.target.value
+        renderOrders()
+    })
+}
+
+if (elements.filterPayment) {
+    elements.filterPayment.addEventListener('change', (e) => {
+        state.filterPayment = e.target.value
         renderOrders()
     })
 }
@@ -266,13 +273,17 @@ const loadItems = async () => {
     }
 }
 
-// ===== ACTUALIZAR ESTADÍSTICAS =====
+// ===== ESTADÍSTICAS =====
 const updateStats = () => {
     if (elements.totalOrders) {
         elements.totalOrders.textContent = state.orders.length
     }
     
-    const pending = state.orders.filter(o => o.status === 'pending' || o.status === 'preparing').length
+    const pending = state.orders.filter(o => 
+        o.payment_status !== 'paid' && 
+        o.status !== 'delivered'
+    ).length
+    
     if (elements.pendingOrders) {
         elements.pendingOrders.textContent = pending
     }
@@ -283,27 +294,42 @@ const updateStats = () => {
     }
 }
 
+// ===== UTILIDADES =====
+const getStatusText = (status) => {
+    const map = {
+        'pending': 'Pendiente',
+        'preparing': 'Preparando',
+        'ready': 'Listo',
+        'delivered': 'Entregado'
+    }
+    return map[status] || status
+}
+
 // ===== RENDERIZAR PEDIDOS =====
 const renderOrders = () => {
     if (!elements.ordersList) return
     
     let filtered = state.orders
+    
     if (state.filterStatus !== 'all') {
         filtered = filtered.filter(o => o.status === state.filterStatus)
+    }
+    
+    if (state.filterPayment !== 'all') {
+        filtered = filtered.filter(o => o.payment_status === state.filterPayment)
     }
     
     if (filtered.length === 0) {
         elements.ordersList.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-clipboard-list"></i>
-                <p>${state.orders.length === 0 ? 'No hay pedidos aún' : 'No hay pedidos con este filtro'}</p>
+                <p>${state.orders.length === 0 ? 'No hay pedidos aún' : 'No hay pedidos con estos filtros'}</p>
             </div>
         `
         return
     }
     
     elements.ordersList.innerHTML = filtered.map(order => {
-        // Configuración según tipo
         const typeConfig = {
             'dine_in': { 
                 icon: 'fa-chair', 
@@ -326,7 +352,6 @@ const renderOrders = () => {
         }
         const type = typeConfig[order.order_type] || typeConfig['dine_in']
         
-        // Info adicional según tipo
         let extraInfo = ''
         if (order.order_type === 'delivery' && order.customer_address) {
             extraInfo = `
@@ -334,13 +359,19 @@ const renderOrders = () => {
                     <i class="fas fa-map-marker-alt"></i> ${order.customer_address.substring(0, 40)}${order.customer_address.length > 40 ? '...' : ''}
                 </div>
             `
-        } else if (order.order_type === 'delivery' && order.customer_phone) {
-            extraInfo = `
-                <div class="order-extra-info">
-                    <i class="fas fa-phone"></i> ${order.customer_phone}
-                </div>
-            `
         }
+        
+        const paymentBadge = order.payment_status === 'paid'
+            ? `<span class="payment-badge paid">💳 PAGADO</span>`
+            : `<span class="payment-badge unpaid">💰 PENDIENTE PAGO</span>`
+        
+        const payButton = order.payment_status !== 'paid'
+            ? `<button class="btn-pay" data-id="${order.id}" title="Marcar como pagado">
+                <i class="fas fa-money-bill-wave"></i> Pagar
+               </button>`
+            : `<button class="btn-paid" disabled title="Ya está pagado">
+                <i class="fas fa-check-circle"></i> Pagado
+               </button>`
         
         return `
             <div class="order-card" style="border-left: 4px solid ${type.color};" data-id="${order.id}">
@@ -356,6 +387,7 @@ const renderOrders = () => {
                     <div class="order-details-line">
                         <span class="total">$${Number(order.total).toFixed(2)}</span>
                         <span class="status-badge ${order.status}">${getStatusText(order.status)}</span>
+                        ${paymentBadge}
                         <span class="order-time">
                             <i class="fas fa-clock"></i> ${new Date(order.created_at).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}
                         </span>
@@ -368,6 +400,7 @@ const renderOrders = () => {
                         <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>✅ Listo</option>
                         <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>📦 Entregado</option>
                     </select>
+                    ${payButton}
                     <button class="btn-view" data-id="${order.id}" title="Ver detalle">
                         <i class="fas fa-eye"></i>
                     </button>
@@ -379,12 +412,18 @@ const renderOrders = () => {
         `
     }).join('')
     
-    // Event listeners
     document.querySelectorAll('.order-status-select').forEach(select => {
         select.addEventListener('change', async (e) => {
             const id = parseInt(select.dataset.id)
             const status = select.value
             await updateOrderStatusHandler(id, status)
+        })
+    })
+    
+    document.querySelectorAll('.btn-pay').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = parseInt(btn.dataset.id)
+            await markAsPaidHandler(id)
         })
     })
     
@@ -404,23 +443,33 @@ const renderOrders = () => {
     })
 }
 
-// ===== FUNCIONES DE UTILIDAD =====
-const getStatusText = (status) => {
-    const map = {
-        'pending': 'Pendiente',
-        'preparing': 'Preparando',
-        'ready': 'Listo',
-        'delivered': 'Entregado'
-    }
-    return map[status] || status
-}
-
 // ===== ACTUALIZAR ESTADO =====
 const updateOrderStatusHandler = async (id, status) => {
     try {
         const result = await updateOrderStatus(id, status)
         if (result.success) {
             showNotification(`✅ Pedido #${id} actualizado`, 'success')
+            await loadOrders()
+        } else {
+            showNotification('❌ Error: ' + result.error, 'error')
+        }
+    } catch (error) {
+        showNotification('❌ Error: ' + error.message, 'error')
+    }
+}
+
+// ===== MARCAR COMO PAGADO =====
+const markAsPaidHandler = async (id) => {
+    const order = state.orders.find(o => o.id === id)
+    if (!order) return
+    
+    if (!confirm(`¿Marcar el pedido #${id} como PAGADO?\n\nTotal: $${Number(order.total).toFixed(2)}\n\nEsto cerrará el pedido en la vista del cliente.`)) return
+    
+    try {
+        const result = await markOrderAsPaid(id)
+        
+        if (result.success) {
+            showNotification(`💳 Pedido #${id} marcado como pagado`, 'success')
             await loadOrders()
         } else {
             showNotification('❌ Error: ' + result.error, 'error')
@@ -447,37 +496,17 @@ const deleteOrderHandler = async (id) => {
     }
 }
 
-// ============================================
-// VER DETALLE DEL PEDIDO (CON TIPO Y DATOS)
-// ============================================
-
+// ===== VER DETALLE =====
 const showOrderDetail = (order) => {
     if (!elements.orderDetail) return
     
-    // Info según tipo de pedido
     const orderTypeInfo = {
-        'dine_in': { 
-            icon: 'fa-chair', 
-            text: 'En Mesa', 
-            color: '#3498db',
-            bgColor: '#ebf5fb'
-        },
-        'delivery': { 
-            icon: 'fa-motorcycle', 
-            text: 'Delivery a Domicilio', 
-            color: '#e67e22',
-            bgColor: '#fef5e7'
-        },
-        'takeaway': { 
-            icon: 'fa-shopping-bag', 
-            text: 'Para Llevar', 
-            color: '#9b59b6',
-            bgColor: '#f4ecf7'
-        }
+        'dine_in': { icon: 'fa-chair', text: 'En Mesa', color: '#3498db', bgColor: '#ebf5fb' },
+        'delivery': { icon: 'fa-motorcycle', text: 'Delivery a Domicilio', color: '#e67e22', bgColor: '#fef5e7' },
+        'takeaway': { icon: 'fa-shopping-bag', text: 'Para Llevar', color: '#9b59b6', bgColor: '#f4ecf7' }
     }
     const typeInfo = orderTypeInfo[order.order_type] || orderTypeInfo['dine_in']
     
-    // Construir la sección de información según el tipo
     let clientInfoHTML = ''
     
     if (order.order_type === 'dine_in') {
@@ -504,7 +533,7 @@ const showOrderDetail = (order) => {
                     <div class="detail-item">
                         <span class="detail-label">Teléfono:</span>
                         <span class="detail-value">
-                            <a href="tel:${order.customer_phone || ''}" style="color: #3498db; text-decoration: none;">
+                            <a href="tel:${order.customer_phone || ''}">
                                 <i class="fas fa-phone"></i> ${order.customer_phone || 'N/A'}
                             </a>
                         </span>
@@ -563,7 +592,7 @@ const showOrderDetail = (order) => {
                         <div class="detail-item">
                             <span class="detail-label">Teléfono:</span>
                             <span class="detail-value">
-                                <a href="tel:${order.customer_phone}" style="color: #3498db; text-decoration: none;">
+                                <a href="tel:${order.customer_phone}">
                                     <i class="fas fa-phone"></i> ${order.customer_phone}
                                 </a>
                             </span>
@@ -581,7 +610,6 @@ const showOrderDetail = (order) => {
         `
     }
     
-    // Construir items
     const itemsHTML = order.items?.map(item => `
         <div class="detail-item-row">
             <span class="item-qty">${item.quantity}x</span>
@@ -590,13 +618,11 @@ const showOrderDetail = (order) => {
         </div>
     `).join('') || '<p>No hay items</p>'
     
-    // Estado del pago
     const paymentStatus = order.payment_status === 'paid' 
         ? '<span style="background: #27ae60; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">💳 PAGADO</span>'
         : '<span style="background: #e74c3c; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">💰 PENDIENTE PAGO</span>'
     
     elements.orderDetail.innerHTML = `
-        <!-- Header con tipo de pedido -->
         <div class="order-detail-header" style="background: ${typeInfo.bgColor}; border-left: 4px solid ${typeInfo.color};">
             <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
                 <i class="fas ${typeInfo.icon}" style="font-size: 1.5rem; color: ${typeInfo.color};"></i>
@@ -617,10 +643,8 @@ const showOrderDetail = (order) => {
             </div>
         </div>
         
-        <!-- Info del cliente -->
         ${clientInfoHTML}
         
-        <!-- Items del pedido -->
         <div class="detail-section">
             <h4><i class="fas fa-utensils"></i> Productos (${order.items?.length || 0})</h4>
             <div class="detail-items">
@@ -628,7 +652,6 @@ const showOrderDetail = (order) => {
             </div>
         </div>
         
-        <!-- Totales -->
         <div class="detail-totals">
             ${order.order_type === 'delivery' ? `
                 <div class="detail-total-row">
@@ -646,8 +669,12 @@ const showOrderDetail = (order) => {
             </div>
         </div>
         
-        <!-- Acciones -->
         <div class="detail-actions">
+            ${order.payment_status !== 'paid' ? `
+                <button class="btn-mark-paid" onclick="window.markAsPaidFromDetail(${order.id})">
+                    <i class="fas fa-money-bill-wave"></i> Marcar como Pagado
+                </button>
+            ` : ''}
             ${order.order_type === 'delivery' && order.customer_phone ? `
                 <a href="https://wa.me/${(order.customer_phone || '').replace(/[^0-9]/g, '')}?text=Hola ${order.customer_name}, tu pedido #${order.id} está en camino" 
                    target="_blank"
@@ -670,6 +697,14 @@ const showOrderDetail = (order) => {
     
     elements.orderModal.classList.add('active')
 }
+
+// Función global para marcar como pagado desde el detalle
+window.markAsPaidFromDetail = async (id) => {
+    const modal = document.getElementById('orderModal')
+    if (modal) modal.classList.remove('active')
+    await markAsPaidHandler(id)
+}
+
 // ===== CERRAR MODAL =====
 if (elements.closeModal) {
     elements.closeModal.addEventListener('click', () => {
@@ -704,7 +739,6 @@ const generateQR = (tableNumber, color = '#2c3e50', bgColor = '#ffffff', size = 
     return { url, qrApiUrl };
 }
 
-// Generar QR individual
 if (elements.generateSingleQRBtn) {
     elements.generateSingleQRBtn.addEventListener('click', () => {
         const table = parseInt(elements.qrTableNumber.value);
@@ -736,7 +770,6 @@ if (elements.generateSingleQRBtn) {
     })
 }
 
-// Descargar QR
 if (elements.downloadQRBtn) {
     elements.downloadQRBtn.addEventListener('click', () => {
         const table = parseInt(elements.qrTableNumber.value);
@@ -756,7 +789,6 @@ if (elements.downloadQRBtn) {
     })
 }
 
-// Generar todos los QR
 if (elements.generateAllQRBtn) {
     elements.generateAllQRBtn.addEventListener('click', () => {
         const color = elements.qrColor.value;
@@ -793,24 +825,14 @@ if (elements.generateAllQRBtn) {
                         padding: 20px;
                         text-align: center;
                         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                        transition: transform 0.3s ease;
                     }
-                    .qr-item:hover { transform: translateY(-5px); }
                     .qr-item img {
                         width: 100%;
                         max-width: 200px;
                         height: auto;
                         margin: 10px 0;
                     }
-                    .qr-item h3 {
-                        margin: 10px 0 5px;
-                        color: #2c3e50;
-                    }
-                    .qr-item .url {
-                        font-size: 0.7rem;
-                        color: #999;
-                        word-break: break-all;
-                    }
+                    .qr-item h3 { margin: 10px 0 5px; color: #2c3e50; }
                     .qr-item .badge {
                         display: inline-block;
                         padding: 0.2rem 0.8rem;
@@ -821,13 +843,11 @@ if (elements.generateAllQRBtn) {
                         margin-top: 0.5rem;
                     }
                     @media print { .qr-item { page-break-inside: avoid; } .no-print { display: none; } }
-                    @media (max-width: 768px) { .qr-grid { grid-template-columns: repeat(2, 1fr); } }
                 </style>
             </head>
             <body>
                 <div class="header">
                     <h1>📱 Códigos QR para Mesas</h1>
-                    <p>Escanea con tu teléfono para ver la carta digital</p>
                     <button onclick="window.print()" class="no-print" style="padding: 0.5rem 2rem; background: #2c3e50; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 1rem 0;">
                         🖨️ Imprimir
                     </button>
@@ -855,7 +875,6 @@ if (elements.generateAllQRBtn) {
                         div.innerHTML = 
                             '<h3>Mesa ' + i + '</h3>' +
                             '<img src="' + qrUrl + '" alt="QR Mesa ' + i + '">' +
-                            '<div class="url">' + url + '</div>' +
                             '<div class="badge">✅ Activo</div>';
                         grid.appendChild(div);
                     }
@@ -867,7 +886,6 @@ if (elements.generateAllQRBtn) {
     })
 }
 
-// Botón QR en el navbar
 if (elements.generateQRNavBtn) {
     elements.generateQRNavBtn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -913,7 +931,6 @@ const renderSections = () => {
     `).join('')
 }
 
-// Función global para editar sección
 window.editSection = (id) => {
     const section = state.sections.find(s => s.id === id)
     if (!section) return
@@ -925,7 +942,6 @@ window.editSection = (id) => {
     elements.sectionModal.classList.add('active')
 }
 
-// Función global para eliminar sección
 window.deleteSectionHandler = async (id) => {
     if (!confirm('¿Eliminar esta sección?')) return
     
@@ -943,7 +959,6 @@ window.deleteSectionHandler = async (id) => {
     }
 }
 
-// Agregar sección
 if (elements.addSectionBtn) {
     elements.addSectionBtn.addEventListener('click', () => {
         state.editingSection = null
@@ -1042,7 +1057,6 @@ const populateSectionSelect = () => {
     `).join('')
 }
 
-// Función global para editar item
 window.editItem = (id) => {
     const item = state.items.find(i => i.id === id)
     if (!item) return
@@ -1058,7 +1072,6 @@ window.editItem = (id) => {
     elements.itemModal.classList.add('active')
 }
 
-// Función global para eliminar item
 window.deleteItemHandler = async (id) => {
     if (!confirm('¿Eliminar este plato?')) return
     
@@ -1075,7 +1088,6 @@ window.deleteItemHandler = async (id) => {
     }
 }
 
-// Agregar item
 if (elements.addItemBtn) {
     elements.addItemBtn.addEventListener('click', () => {
         state.editingItem = null
@@ -1126,6 +1138,69 @@ if (elements.itemForm) {
         }
     })
 }
+
+// ===== ESTILOS ADICIONALES =====
+const styles = document.createElement('style')
+styles.textContent = `
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .payment-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .payment-badge.paid { background: #27ae60; color: white; }
+    .payment-badge.unpaid { background: #e74c3c; color: white; }
+    
+    .btn-pay {
+        padding: 0.3rem 0.8rem;
+        background: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .btn-pay:hover {
+        background: #219a52;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    }
+    
+    .btn-paid {
+        padding: 0.3rem 0.8rem;
+        background: #95a5a6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: not-allowed;
+        font-size: 0.8rem;
+        opacity: 0.7;
+    }
+    
+    .btn-mark-paid {
+        background: #27ae60;
+        color: white;
+    }
+    
+    .btn-mark-paid:hover {
+        background: #219a52;
+    }
+`
+document.head.appendChild(styles)
 
 // ===== INICIAR =====
 checkAuth()

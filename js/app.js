@@ -141,7 +141,6 @@ const loadData = async () => {
         state.isLoading = true
         showMessage('Cargando menú...', 'info')
 
-        // Cargar configuración
         await loadRestaurantSettings()
 
         const sectionsResult = await getMenuSections()
@@ -188,16 +187,13 @@ const loadData = async () => {
 // ============================================
 
 const initOrderTypeSelector = () => {
-    // Cargar preferencia guardada
     const savedType = localStorage.getItem('orderType')
     if (savedType && ['dine_in', 'delivery', 'takeaway'].includes(savedType)) {
-        // Verificar que esté habilitado
         if (state.settings[`${savedType}_enabled`]) {
             changeOrderType(savedType)
         }
     }
 
-    // Event listeners
     document.querySelectorAll('.order-type-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             changeOrderType(btn.dataset.type)
@@ -208,15 +204,12 @@ const initOrderTypeSelector = () => {
 const changeOrderType = (type) => {
     state.orderType = type
     
-    // Actualizar botones activos
     document.querySelectorAll('.order-type-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.type === type)
     })
     
-    // Actualizar atributo del body
     document.body.setAttribute('data-order-type', type)
     
-    // Actualizar texto del carrito
     const cartOrderType = document.getElementById('cartOrderType')
     if (cartOrderType) {
         const icons = {
@@ -232,7 +225,6 @@ const changeOrderType = (type) => {
         cartOrderType.innerHTML = `<i class="fas ${icons[type]}"></i> ${labels[type]}`
     }
     
-    // Actualizar etiqueta del último paso
     const stepDeliveredLabel = document.getElementById('stepDeliveredLabel')
     if (stepDeliveredLabel) {
         const labels = {
@@ -243,15 +235,11 @@ const changeOrderType = (type) => {
         stepDeliveredLabel.textContent = labels[type]
     }
     
-    // Mostrar/ocultar selector de mesa
     if (elements.tableSelector) {
         elements.tableSelector.style.display = type === 'dine_in' ? 'flex' : 'none'
     }
     
-    // Actualizar totales
     updateCartUI()
-    
-    // Guardar preferencia
     localStorage.setItem('orderType', type)
     
     console.log(`📋 Tipo de pedido: ${type}`)
@@ -391,7 +379,6 @@ const updateCartUI = () => {
     const totalItems = state.cart.reduce((sum, item) => sum + item.quantity, 0)
     const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
     
-    // Calcular costo de envío
     let deliveryFee = 0
     if (state.orderType === 'delivery') {
         if (subtotal >= state.settings.delivery_min_order) {
@@ -401,12 +388,10 @@ const updateCartUI = () => {
     
     const total = subtotal + deliveryFee
     
-    // Actualizar badge
     if (elements.cartBadge) {
         elements.cartBadge.textContent = totalItems
     }
     
-    // Actualizar items
     if (elements.cartItems) {
         if (state.cart.length === 0) {
             elements.cartItems.innerHTML = `
@@ -432,7 +417,6 @@ const updateCartUI = () => {
         }
     }
     
-    // Mostrar/ocultar subtotal (solo delivery)
     const subtotalRow = document.getElementById('cartSubtotalRow')
     if (subtotalRow) {
         subtotalRow.style.display = state.orderType === 'delivery' ? 'flex' : 'none'
@@ -440,7 +424,6 @@ const updateCartUI = () => {
         if (subtotalEl) subtotalEl.textContent = `$${subtotal.toFixed(2)}`
     }
     
-    // Mostrar/ocultar costo de envío (solo delivery)
     const deliveryRow = document.getElementById('cartDeliveryFeeRow')
     if (deliveryRow) {
         deliveryRow.style.display = state.orderType === 'delivery' ? 'flex' : 'none'
@@ -448,12 +431,10 @@ const updateCartUI = () => {
         if (deliveryEl) deliveryEl.textContent = `$${deliveryFee.toFixed(2)}`
     }
     
-    // Actualizar total
     if (elements.cartTotal) {
         elements.cartTotal.textContent = `$${total.toFixed(2)}`
     }
     
-    // Mostrar/ocultar formularios según tipo
     const deliveryForm = document.getElementById('deliveryForm')
     const takeawayForm = document.getElementById('takeawayForm')
     
@@ -464,7 +445,6 @@ const updateCartUI = () => {
         takeawayForm.style.display = state.orderType === 'takeaway' ? 'block' : 'none'
     }
     
-    // Validar mínimo para delivery
     if (elements.placeOrderBtn && state.orderType === 'delivery') {
         if (subtotal < state.settings.delivery_min_order && subtotal > 0) {
             elements.placeOrderBtn.disabled = true
@@ -490,8 +470,6 @@ const initQRDetection = () => {
     
     if (table) {
         document.getElementById('tableNumber').value = table;
-        
-        // Forzar tipo dine_in si viene de QR
         changeOrderType('dine_in')
         
         const banner = document.getElementById('welcomeBanner');
@@ -607,7 +585,6 @@ const generateTicket = (order) => {
         </div>
     `).join('');
     
-    // Info adicional según tipo
     let extraInfo = '';
     if (order.order_type === 'delivery') {
         extraInfo = `
@@ -634,6 +611,10 @@ const generateTicket = (order) => {
             </div>
         `;
     }
+    
+    const paymentBadge = order.payment_status === 'paid' 
+        ? '<div style="background: #27ae60; color: white; padding: 0.3rem; text-align: center; border-radius: 4px; margin: 0.5rem 0; font-weight: bold; font-size: 0.85rem;">✅ PAGADO</div>'
+        : '<div style="background: #f39c12; color: white; padding: 0.3rem; text-align: center; border-radius: 4px; margin: 0.5rem 0; font-weight: bold; font-size: 0.85rem;">💰 PENDIENTE DE PAGO</div>';
     
     const ticketHTML = `
         <div class="ticket-print-area" id="ticketPrintArea">
@@ -662,6 +643,7 @@ const generateTicket = (order) => {
                     <span>TOTAL</span>
                     <span>$${Number(order.total).toFixed(2)}</span>
                 </div>
+                ${paymentBadge}
                 <div class="ticket-footer">
                     <p>¡Gracias por tu preferencia!</p>
                     <p style="font-size: 0.7rem;">Estado: ${getStatusText(order.status)}</p>
@@ -721,11 +703,9 @@ const showTrackingPanel = async (orderId, table, total, orderType) => {
         
         if (data) {
             generateTicket(data);
-            // Actualizar tipo de pedido
             const typeEl = document.getElementById('trackingOrderType');
             if (typeEl) typeEl.textContent = getOrderTypeText(data.order_type);
             
-            // Actualizar etiqueta del último paso según tipo
             const stepDeliveredLabel = document.getElementById('stepDeliveredLabel');
             if (stepDeliveredLabel) {
                 const labels = {
@@ -777,10 +757,43 @@ const checkOrderStatus = async () => {
             return;
         }
         
+        // Si el pedido fue pagado, cerrar automáticamente
+        if (data.payment_status === 'paid') {
+            handlePaidOrder(data);
+            return;
+        }
+        
         updateTrackingStatus(data);
     } catch (error) {
         console.error('Error:', error);
     }
+}
+
+// ============================================
+// MANEJAR PEDIDO PAGADO
+// ============================================
+
+const handlePaidOrder = (order) => {
+    console.log('💰 Pedido pagado:', order.id);
+    
+    if (trackingInterval) {
+        clearInterval(trackingInterval);
+        trackingInterval = null;
+    }
+    
+    const panel = document.getElementById('orderTrackingPanel');
+    if (panel) panel.style.display = 'none';
+    
+    const overlay = document.getElementById('overlay');
+    if (overlay) overlay.classList.remove('active');
+    
+    clearTracking();
+    
+    showNotification('💳 ¡Gracias por tu pago! Tu pedido ha sido cerrado.', 'success');
+    
+    setTimeout(() => {
+        showNotification('👋 ¡Vuelve pronto!', 'info');
+    }, 2000);
 }
 
 const updateTrackingStatus = (order) => {
@@ -815,14 +828,10 @@ const updateTrackingStatus = (order) => {
         }
     });
     
-    // Actualizar ticket
     generateTicket(order);
     
-    if (status === 'delivered') {
-        if (trackingInterval) {
-            clearInterval(trackingInterval);
-            trackingInterval = null;
-        }
+    if (status === 'delivered' && !order._notifiedDelivered) {
+        order._notifiedDelivered = true;
         
         const messages = {
             'dine_in': '🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.',
@@ -851,9 +860,7 @@ const updateTrackingButton = () => {
         } else {
             elements.trackingBtn.style.display = 'none';
             const badge = elements.trackingBtn.querySelector('.badge');
-            if (badge) {
-                badge.style.display = 'none';
-            }
+            if (badge) badge.style.display = 'none';
         }
     }
 }
@@ -892,6 +899,12 @@ const restoreTracking = async () => {
         if (error || !data) {
             clearTracking();
             showNotification('El pedido ya no está disponible', 'warning');
+            return false;
+        }
+        
+        if (data.payment_status === 'paid') {
+            clearTracking();
+            showNotification('Este pedido ya fue pagado y cerrado', 'info');
             return false;
         }
         
@@ -934,7 +947,6 @@ document.getElementById('downloadTicketBtn')?.addEventListener('click', () => {
 // ============================================
 
 const placeOrder = async () => {
-    // Validaciones según tipo
     if (state.orderType === 'dine_in') {
         if (!elements.tableNumber.value) {
             showNotification('Por favor, ingresa el número de mesa', 'warning');
@@ -982,7 +994,6 @@ const placeOrder = async () => {
         
         const total = subtotal + deliveryFee;
         
-        // Datos base
         const order = {
             customer_name: state.orderType === 'dine_in' 
                 ? `Mesa ${elements.tableNumber.value}`
@@ -1000,7 +1011,6 @@ const placeOrder = async () => {
             status: 'pending'
         };
         
-        // Datos específicos por tipo
         if (state.orderType === 'dine_in') {
             order.table_number = parseInt(elements.tableNumber.value);
         } else if (state.orderType === 'delivery') {
@@ -1039,14 +1049,11 @@ const placeOrder = async () => {
         closeCartPanel();
         
         // Limpiar formularios
-        document.getElementById('customerName') && (document.getElementById('customerName').value = '');
-        document.getElementById('customerPhone') && (document.getElementById('customerPhone').value = '');
-        document.getElementById('customerAddress') && (document.getElementById('customerAddress').value = '');
-        document.getElementById('customerReference') && (document.getElementById('customerReference').value = '');
-        document.getElementById('orderNotes') && (document.getElementById('orderNotes').value = '');
-        document.getElementById('takeawayName') && (document.getElementById('takeawayName').value = '');
-        document.getElementById('takeawayPhone') && (document.getElementById('takeawayPhone').value = '');
-        document.getElementById('takeawayNotes') && (document.getElementById('takeawayNotes').value = '');
+        const fields = ['customerName', 'customerPhone', 'customerAddress', 'customerReference', 'orderNotes', 'takeawayName', 'takeawayPhone', 'takeawayNotes'];
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
         
         setTimeout(() => {
             showNotification('📱 Puedes seguir el estado de tu pedido con el botón 🚚', 'info');
@@ -1102,360 +1109,6 @@ if (elements.tableNumber) {
         }
     })
 }
-
-// ============================================
-// ESTILOS ADICIONALES
-// ============================================
-
-const styles = document.createElement('style');
-styles.textContent = `
-    .order-tracking-panel {
-        position: fixed;
-        bottom: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 90%;
-        max-width: 500px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        z-index: 1001;
-        padding: 1.5rem;
-        max-height: 80vh;
-        overflow-y: auto;
-        animation: slideUp 0.3s ease;
-    }
-    
-    .tracking-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #f0f0f0;
-    }
-    
-    .tracking-header h3 {
-        margin: 0;
-        color: #2c3e50;
-    }
-    
-    .tracking-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
-    }
-    
-    .btn-ticket {
-        padding: 0.4rem 0.8rem;
-        background: #27ae60;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.8rem;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-    }
-    
-    .btn-ticket:hover {
-        background: #219a52;
-        transform: scale(1.05);
-    }
-    
-    .close-tracking {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #999;
-        transition: all 0.3s ease;
-    }
-    
-    .close-tracking:hover {
-        color: #e74c3c;
-        transform: rotate(90deg);
-    }
-    
-    .tracking-status {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 1.5rem 0;
-        padding: 0.5rem 0;
-        position: relative;
-    }
-    
-    .status-step {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.3rem;
-        flex: 1;
-        position: relative;
-        z-index: 2;
-        opacity: 0.4;
-        transition: all 0.5s ease;
-    }
-    
-    .status-step i {
-        font-size: 1.5rem;
-        background: #f0f0f0;
-        padding: 0.5rem;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.5s ease;
-    }
-    
-    .status-step span {
-        font-size: 0.7rem;
-        text-align: center;
-        color: #666;
-    }
-    
-    .status-step.active {
-        opacity: 1;
-    }
-    
-    .status-step.active i {
-        background: #3498db;
-        color: white;
-        transform: scale(1.1);
-        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-    }
-    
-    .status-step.completed {
-        opacity: 1;
-    }
-    
-    .status-step.completed i {
-        background: #27ae60;
-        color: white;
-    }
-    
-    .status-line {
-        flex: 1;
-        height: 3px;
-        background: #e0e0e0;
-        position: relative;
-        z-index: 1;
-        transition: all 0.5s ease;
-    }
-    
-    .status-step.completed + .status-line {
-        background: #27ae60;
-    }
-    
-    .tracking-info {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-top: 0.5rem;
-    }
-    
-    .tracking-info p {
-        margin: 0.3rem 0;
-        font-size: 0.9rem;
-    }
-    
-    .tracking-info p strong {
-        color: #2c3e50;
-        min-width: 70px;
-        display: inline-block;
-    }
-    
-    #trackingStatus {
-        font-weight: bold;
-        padding: 0.2rem 0.8rem;
-        border-radius: 20px;
-    }
-    
-    #trackingStatus.status-pending { background: #f39c12; color: white; }
-    #trackingStatus.status-preparing { background: #3498db; color: white; }
-    #trackingStatus.status-ready { background: #27ae60; color: white; }
-    #trackingStatus.status-delivered { background: #95a5a6; color: white; }
-    
-    #trackingBtn {
-        display: none;
-        background: none;
-        border: none;
-        font-size: 1.3rem;
-        cursor: pointer;
-        color: var(--secondary);
-        padding: 0.3rem 0.6rem;
-        border-radius: 8px;
-        background: #f0f0f0;
-        transition: all 0.3s ease;
-        position: relative;
-    }
-    
-    #trackingBtn:hover {
-        color: var(--primary);
-        background: #fde8e8;
-        transform: scale(1.1);
-    }
-    
-    #trackingBtn .badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: #e74c3c;
-        color: white;
-        border-radius: 50%;
-        padding: 0.1rem 0.4rem;
-        font-size: 0.6rem;
-        font-weight: bold;
-        display: none;
-        animation: pulse 1.5s infinite;
-    }
-    
-    .ticket-content {
-        background: #f9f9f9;
-        padding: 1.5rem;
-        border-radius: 8px;
-        font-family: 'Courier New', monospace;
-        max-width: 400px;
-        margin: 0 auto;
-        border: 1px solid #ddd;
-    }
-    
-    .ticket-content .ticket-header {
-        text-align: center;
-        border-bottom: 2px dashed #333;
-        padding-bottom: 0.8rem;
-        margin-bottom: 0.8rem;
-    }
-    
-    .ticket-content .ticket-header h3 {
-        margin: 0;
-        font-size: 1.2rem;
-        color: #2c3e50;
-    }
-    
-    .ticket-content .ticket-header p {
-        margin: 0.2rem 0;
-        font-size: 0.8rem;
-        color: #666;
-    }
-    
-    .ticket-extra-info {
-        background: #fff;
-        padding: 0.5rem;
-        border-radius: 4px;
-        margin-bottom: 0.8rem;
-        font-size: 0.85rem;
-        border-left: 3px solid #3498db;
-    }
-    
-    .ticket-extra-info p {
-        margin: 0.2rem 0;
-    }
-    
-    .ticket-content .ticket-items {
-        margin: 0.8rem 0;
-    }
-    
-    .ticket-content .ticket-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.3rem 0;
-        border-bottom: 1px dotted #ddd;
-        font-size: 0.9rem;
-    }
-    
-    .ticket-subtotal {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.3rem 0;
-        font-size: 0.9rem;
-        color: #666;
-    }
-    
-    .ticket-content .ticket-total {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.8rem 0;
-        border-top: 2px solid #333;
-        margin-top: 0.5rem;
-        font-weight: bold;
-        font-size: 1.1rem;
-    }
-    
-    .ticket-content .ticket-footer {
-        text-align: center;
-        margin-top: 1rem;
-        padding-top: 0.8rem;
-        border-top: 2px dashed #333;
-        font-size: 0.8rem;
-        color: #999;
-    }
-    
-    @media print {
-        body * { visibility: hidden; }
-        .ticket-print-area, .ticket-print-area * { visibility: visible !important; }
-        .ticket-print-area {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 20px;
-            background: white;
-            z-index: 9999;
-        }
-        .btn-ticket, .close-tracking, #trackingBtn, .tracking-actions {
-            display: none !important;
-        }
-        .order-tracking-panel {
-            position: static !important;
-            transform: none !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            box-shadow: none !important;
-            border: none !important;
-        }
-        #overlay { display: none !important; }
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-        100% { transform: scale(1); }
-    }
-    
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .order-tracking-panel {
-            width: 95%;
-            bottom: 70px;
-            padding: 1rem;
-        }
-        .status-step i {
-            font-size: 1.2rem;
-            width: 35px;
-            height: 35px;
-        }
-        .status-step span {
-            font-size: 0.6rem;
-        }
-    }
-`;
-document.head.appendChild(styles);
 
 // ============================================
 // INICIAR

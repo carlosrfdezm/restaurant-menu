@@ -1,4 +1,6 @@
-// Configuración de Supabase
+// ============================================
+// CONFIGURACIÓN DE SUPABASE
+// ============================================
 const supabaseUrl = 'https://ftoaeotkdzwjlsiczlaj.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0b2Flb3RrZHp3amxzaWN6bGFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMDQ2MTYsImV4cCI6MjEwMzc4MDYxNn0.AUjIqbuvpOs4RV3BtnuRuDvqcRKFMJ80CeFyqRU-wfs'
 
@@ -183,6 +185,7 @@ export const createOrder = async (order) => {
             customer_reference: order.customer_reference || null,
             notes: order.notes || null,
             payment_method: order.payment_method || 'cash',
+            payment_status: 'unpaid',
             estimated_time: order.estimated_time || 30,
             status: order.status || 'pending'
         }
@@ -234,11 +237,59 @@ export const getOrdersByType = async (type) => {
     }
 }
 
+export const getOrderById = async (id) => {
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', id)
+            .single()
+        if (error) return handleError(error)
+        return handleSuccess(data)
+    } catch (error) {
+        return handleError(error)
+    }
+}
+
 export const updateOrderStatus = async (id, status) => {
     try {
         const { data, error } = await supabase
             .from('orders')
             .update({ status })
+            .eq('id', id)
+            .select()
+        if (error) return handleError(error)
+        return handleSuccess(data)
+    } catch (error) {
+        return handleError(error)
+    }
+}
+
+export const markOrderAsPaid = async (id) => {
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .update({ 
+                payment_status: 'paid',
+                paid_at: new Date().toISOString()
+            })
+            .eq('id', id)
+            .select()
+        if (error) return handleError(error)
+        return handleSuccess(data)
+    } catch (error) {
+        return handleError(error)
+    }
+}
+
+export const markOrderAsUnpaid = async (id) => {
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .update({ 
+                payment_status: 'unpaid',
+                paid_at: null
+            })
             .eq('id', id)
             .select()
         if (error) return handleError(error)

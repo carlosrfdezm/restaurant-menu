@@ -5,731 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        /* ===== RESET Y VARIABLES ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        :root {
-            --primary: #2c3e50;
-            --secondary: #34495e;
-            --accent: #3498db;
-            --success: #27ae60;
-            --warning: #f39c12;
-            --danger: #e74c3c;
-            --background: #f5f6fa;
-            --card-shadow: 0 2px 15px rgba(0,0,0,0.08);
-            --border-radius: 12px;
-            --transition: all 0.3s ease;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--background);
-            color: var(--primary);
-        }
-        
-        /* ===== LOGIN ===== */
-        .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            padding: 1rem;
-        }
-        
-        .login-box {
-            background: white;
-            padding: 3rem;
-            border-radius: var(--border-radius);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            width: 100%;
-            max-width: 400px;
-        }
-        
-        .login-box .logo {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .login-box .logo i {
-            font-size: 3rem;
-            color: #e74c3c;
-        }
-        
-        .login-box .logo h1 {
-            margin-top: 0.5rem;
-            color: var(--primary);
-        }
-        
-        .login-box .logo p {
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1.2rem;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 0.3rem;
-            font-weight: 500;
-            color: var(--primary);
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 0.7rem;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
-        
-        .btn-primary {
-            width: 100%;
-            padding: 0.7rem;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        
-        .btn-primary:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-        }
-        
-        .btn-success {
-            background: var(--success);
-        }
-        
-        .btn-success:hover {
-            background: #219a52;
-        }
-        
-        .btn-danger {
-            background: var(--danger);
-        }
-        
-        .btn-danger:hover {
-            background: #c0392b;
-        }
-        
-        /* ===== DASHBOARD ===== */
-        .dashboard-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem;
-        }
-        
-        .dashboard-header {
-            background: white;
-            padding: 1.5rem 2rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--card-shadow);
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        
-        .dashboard-header .left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .dashboard-header .left h2 {
-            font-size: 1.5rem;
-            color: var(--primary);
-        }
-        
-        .dashboard-header .left h2 i {
-            color: #e74c3c;
-        }
-        
-        .dashboard-header .right {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            flex-wrap: wrap;
-        }
-        
-        .dashboard-header .right .user-email {
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        .dashboard-header .right .badge {
-            background: #e74c3c;
-            color: white;
-            padding: 0.2rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-        
-        .btn-logout {
-            padding: 0.5rem 1.2rem;
-            background: var(--danger);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .btn-logout:hover {
-            background: #c0392b;
-            transform: translateY(-2px);
-        }
-        
-        .btn-icon {
-            padding: 0.5rem 0.8rem;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .btn-icon:hover {
-            transform: scale(1.05);
-        }
-        
-        /* ===== TABS ===== */
-        .admin-tabs {
-            display: flex;
-            gap: 0.5rem;
-            background: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--card-shadow);
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            overflow-x: auto;
-        }
-        
-        .tab-btn {
-            padding: 0.5rem 1.5rem;
-            border: none;
-            background: transparent;
-            color: #666;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: var(--transition);
-            font-size: 0.9rem;
-            white-space: nowrap;
-        }
-        
-        .tab-btn:hover {
-            background: #f0f0f0;
-        }
-        
-        .tab-btn.active {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* ===== STATS ===== */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--card-shadow);
-            text-align: center;
-            transition: var(--transition);
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 25px rgba(0,0,0,0.12);
-        }
-        
-        .stat-card .icon {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-card .number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--primary);
-        }
-        
-        .stat-card .label {
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 0.3rem;
-        }
-        
-        .stat-card.pending .number { color: var(--warning); }
-        .stat-card.orders .number { color: var(--accent); }
-        .stat-card.items .number { color: var(--success); }
-        .stat-card.sections .number { color: #8e44ad; }
-        
-        /* ===== ORDERS ===== */
-        .orders-section {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--card-shadow);
-            padding: 1.5rem;
-        }
-        
-        .orders-section .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        
-        .orders-section .header h3 {
-            font-size: 1.2rem;
-            color: var(--primary);
-        }
-        
-        .orders-section .header h3 i {
-            color: var(--accent);
-            margin-right: 0.5rem;
-        }
-        
-        .filter-select {
-            padding: 0.5rem 1rem;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            background: white;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        
-        .order-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid #f0f0f0;
-            transition: var(--transition);
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-        
-        .order-card:last-child {
-            border-bottom: none;
-        }
-        
-        .order-card:hover {
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        .order-card .info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        
-        .order-card .info .id {
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: var(--primary);
-        }
-        
-        .order-card .info .table {
-            background: var(--primary);
-            color: white;
-            padding: 0.2rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-        }
-        
-        .order-card .info .customer {
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        .order-card .info .total {
-            font-weight: bold;
-            color: #e74c3c;
-            font-size: 1.1rem;
-        }
-        
-        .order-card .actions {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        
-        .order-status-select {
-            padding: 0.3rem 0.8rem;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            background: white;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .order-status-select:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        
-        .btn-view {
-            padding: 0.3rem 0.8rem;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .btn-view:hover {
-            background: #2980b9;
-            transform: scale(1.05);
-        }
-        
-        .btn-delete {
-            padding: 0.3rem 0.8rem;
-            background: var(--danger);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .btn-delete:hover {
-            background: #c0392b;
-            transform: scale(1.05);
-        }
-        
-        .status-badge {
-            padding: 0.2rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: white;
-        }
-        
-        .status-badge.pending { background: #f39c12; }
-        .status-badge.preparing { background: #3498db; }
-        .status-badge.ready { background: #27ae60; }
-        .status-badge.delivered { background: #95a5a6; }
-        
-        /* ===== QR GENERATOR ===== */
-        .qr-generator-section {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--card-shadow);
-            padding: 2rem;
-        }
-        
-        .qr-generator-container {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 2rem;
-            margin-top: 1.5rem;
-        }
-        
-        .qr-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .qr-controls .form-group {
-            margin-bottom: 0;
-        }
-        
-        .qr-controls .form-group label {
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 0.3rem;
-            display: block;
-        }
-        
-        .qr-controls .form-group input,
-        .qr-controls .form-group select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-        
-        .qr-controls .form-group input[type="color"] {
-            padding: 0.2rem;
-            height: 40px;
-            cursor: pointer;
-        }
-        
-        .qr-controls .form-group input:focus,
-        .qr-controls .form-group select:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        
-        .qr-controls .btn-primary {
-            width: 100%;
-        }
-        
-        .qr-preview {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #fafafa;
-            border-radius: 12px;
-            padding: 2rem;
-            min-height: 400px;
-            border: 2px dashed #e0e0e0;
-        }
-        
-        #qrImage {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        
-        #qrPlaceholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-        }
-        
-        #qrPlaceholder i {
-            font-size: 4rem;
-            color: #ddd;
-            margin-bottom: 1rem;
-        }
-        
-        #qrInfo {
-            width: 100%;
-            margin-top: 1rem;
-            padding: 1rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        
-        #qrInfo p {
-            margin: 0.3rem 0;
-            font-size: 0.9rem;
-        }
-        
-        #qrInfo p strong {
-            color: var(--primary);
-            min-width: 80px;
-            display: inline-block;
-        }
-        
-        #qrInfoUrl {
-            color: var(--accent);
-            word-break: break-all;
-            font-size: 0.8rem;
-        }
-        
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #999;
-        }
-        
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #ddd;
-        }
-        
-        /* ===== MODAL ===== */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem;
-        }
-        
-        .modal-overlay.active {
-            display: flex;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 2rem;
-            max-width: 600px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-            animation: modalIn 0.3s ease;
-        }
-        
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1.5rem;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #999;
-            transition: var(--transition);
-            background: none;
-            border: none;
-        }
-        
-        .modal-close:hover {
-            color: var(--danger);
-            transform: rotate(90deg);
-        }
-        
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .dashboard-header {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .dashboard-header .right {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .order-card {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .order-card .actions {
-                justify-content: flex-end;
-            }
-            
-            .login-box {
-                padding: 2rem;
-            }
-            
-            .qr-generator-container {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-            
-            .qr-preview {
-                min-height: 250px;
-                padding: 1rem;
-            }
-            
-            .admin-tabs {
-                padding: 0.5rem 1rem;
-            }
-            
-            .tab-btn {
-                padding: 0.3rem 0.8rem;
-                font-size: 0.8rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .dashboard-container {
-                padding: 1rem;
-            }
-            
-            .dashboard-header {
-                padding: 1rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
-    <div id="app">
-        <!-- ===== LOGIN ===== -->
+    <div id="adminApp">
+        <!-- Login -->
         <div id="loginSection" class="login-container">
             <div class="login-box">
                 <div class="logo">
@@ -753,10 +33,9 @@
             </div>
         </div>
 
-        <!-- ===== DASHBOARD ===== -->
+        <!-- Dashboard -->
         <div id="dashboardSection" style="display: none;">
             <div class="dashboard-container">
-                <!-- Header -->
                 <div class="dashboard-header">
                     <div class="left">
                         <h2><i class="fas fa-utensils"></i> Panel de Administración</h2>
@@ -776,7 +55,6 @@
                     </div>
                 </div>
 
-                <!-- Tabs -->
                 <div class="admin-tabs">
                     <button class="tab-btn active" data-tab="orders">
                         <i class="fas fa-clipboard-list"></i> Pedidos
@@ -792,143 +70,149 @@
                     </button>
                 </div>
 
-                <!-- Tab: Pedidos -->
-                <div id="tabOrders" class="tab-content active">
-                    <div class="stats-grid">
-                        <div class="stat-card orders">
-                            <div class="icon"><i class="fas fa-clipboard-list" style="color: #3498db;"></i></div>
-                            <div class="number" id="totalOrders">0</div>
-                            <div class="label">Total Pedidos</div>
-                        </div>
-                        <div class="stat-card pending">
-                            <div class="icon"><i class="fas fa-clock" style="color: #f39c12;"></i></div>
-                            <div class="number" id="pendingOrders">0</div>
-                            <div class="label">Pendientes</div>
-                        </div>
-                        <div class="stat-card items">
-                            <div class="icon"><i class="fas fa-utensils" style="color: #27ae60;"></i></div>
-                            <div class="number" id="totalItems">0</div>
-                            <div class="label">Platos</div>
-                        </div>
-                        <div class="stat-card sections">
-                            <div class="icon"><i class="fas fa-tags" style="color: #8e44ad;"></i></div>
-                            <div class="number" id="totalSections">0</div>
-                            <div class="label">Secciones</div>
-                        </div>
-                    </div>
-
-                    <div class="orders-section">
-                        <div class="header">
-                            <h3><i class="fas fa-clipboard-list"></i> Últimos Pedidos</h3>
-                            <div>
-                                <select id="filterStatus" class="filter-select">
-                                    <option value="all">Todos</option>
-                                    <option value="pending">⏳ Pendientes</option>
-                                    <option value="preparing">🔪 Preparando</option>
-                                    <option value="ready">✅ Listos</option>
-                                    <option value="delivered">📦 Entregados</option>
-                                </select>
+                <div class="admin-content">
+                    <!-- Tab: Pedidos -->
+                    <div id="tabOrders" class="tab-content active">
+                        <div class="stats-grid">
+                            <div class="stat-card orders">
+                                <div class="icon"><i class="fas fa-clipboard-list" style="color: #3498db;"></i></div>
+                                <div class="number" id="totalOrders">0</div>
+                                <div class="label">Total Pedidos</div>
+                            </div>
+                            <div class="stat-card pending">
+                                <div class="icon"><i class="fas fa-clock" style="color: #f39c12;"></i></div>
+                                <div class="number" id="pendingOrders">0</div>
+                                <div class="label">Pendientes</div>
+                            </div>
+                            <div class="stat-card items">
+                                <div class="icon"><i class="fas fa-utensils" style="color: #27ae60;"></i></div>
+                                <div class="number" id="totalItems">0</div>
+                                <div class="label">Platos</div>
+                            </div>
+                            <div class="stat-card sections">
+                                <div class="icon"><i class="fas fa-tags" style="color: #8e44ad;"></i></div>
+                                <div class="number" id="totalSections">0</div>
+                                <div class="label">Secciones</div>
                             </div>
                         </div>
-                        <div id="ordersList">
-                            <div class="empty-state">
-                                <i class="fas fa-clipboard-list"></i>
-                                <p>No hay pedidos aún</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Tab: Generar QR -->
-                <div id="tabQR" class="tab-content">
-                    <div class="qr-generator-section">
-                        <div class="header">
-                            <h3><i class="fas fa-qrcode"></i> Generador de Códigos QR</h3>
-                            <p style="color: #666; font-size: 0.9rem;">Genera QR para que los clientes accedan a la carta digital</p>
-                        </div>
-                        
-                        <div class="qr-generator-container">
-                            <div class="qr-controls">
-                                <div class="form-group">
-                                    <label>Número de Mesa</label>
-                                    <input type="number" id="qrTableNumber" min="1" max="99" value="1">
-                                </div>
-                                <div class="form-group">
-                                    <label>Color del QR</label>
-                                    <input type="color" id="qrColor" value="#2c3e50">
-                                </div>
-                                <div class="form-group">
-                                    <label>Color de fondo</label>
-                                    <input type="color" id="qrBgColor" value="#ffffff">
-                                </div>
-                                <div class="form-group">
-                                    <label>Tamaño</label>
-                                    <select id="qrSize">
-                                        <option value="200">200px</option>
-                                        <option value="300" selected>300px</option>
-                                        <option value="400">400px</option>
-                                        <option value="500">500px</option>
+                        <div class="orders-section">
+                            <div class="header">
+                                <h3><i class="fas fa-clipboard-list"></i> Todos los Pedidos</h3>
+                                <div class="filter-orders" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <select id="filterStatus" class="filter-select">
+                                        <option value="all">Todos los estados</option>
+                                        <option value="pending">⏳ Pendientes</option>
+                                        <option value="preparing">🔪 Preparando</option>
+                                        <option value="ready">✅ Listos</option>
+                                        <option value="delivered">📦 Entregados</option>
+                                    </select>
+                                    <select id="filterPayment" class="filter-select">
+                                        <option value="all">Todos los pagos</option>
+                                        <option value="unpaid">💰 Pendientes de pago</option>
+                                        <option value="paid">💳 Pagados</option>
                                     </select>
                                 </div>
-                                <button class="btn-primary" id="generateSingleQRBtn">
-                                    <i class="fas fa-qrcode"></i> Generar QR
-                                </button>
-                                <button class="btn-primary btn-success" id="downloadQRBtn">
-                                    <i class="fas fa-download"></i> Descargar QR
-                                </button>
-                                <button class="btn-primary" id="generateAllQRBtn" style="background: #8e44ad;">
-                                    <i class="fas fa-file-pdf"></i> Generar Todos los QR
-                                </button>
                             </div>
-                            <div class="qr-preview">
-                                <div id="qrPreviewContainer">
-                                    <img id="qrImage" src="" alt="Código QR" style="display: none;">
-                                    <div id="qrPlaceholder">
-                                        <i class="fas fa-qrcode"></i>
-                                        <p>Genera un código QR para tu mesa</p>
+                            <div id="ordersList">
+                                <div class="empty-state">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    <p>No hay pedidos aún</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: QR -->
+                    <div id="tabQR" class="tab-content">
+                        <div class="qr-generator-section">
+                            <div class="header">
+                                <h3><i class="fas fa-qrcode"></i> Generador de Códigos QR</h3>
+                            </div>
+                            
+                            <div class="qr-generator-container">
+                                <div class="qr-controls">
+                                    <div class="form-group">
+                                        <label>Número de Mesa</label>
+                                        <input type="number" id="qrTableNumber" min="1" max="99" value="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Color del QR</label>
+                                        <input type="color" id="qrColor" value="#2c3e50">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Color de fondo</label>
+                                        <input type="color" id="qrBgColor" value="#ffffff">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Tamaño</label>
+                                        <select id="qrSize">
+                                            <option value="200">200px</option>
+                                            <option value="300" selected>300px</option>
+                                            <option value="400">400px</option>
+                                            <option value="500">500px</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn-primary" id="generateSingleQRBtn">
+                                        <i class="fas fa-qrcode"></i> Generar QR
+                                    </button>
+                                    <button class="btn-primary btn-success" id="downloadQRBtn">
+                                        <i class="fas fa-download"></i> Descargar QR
+                                    </button>
+                                    <button class="btn-primary" id="generateAllQRBtn" style="background: #8e44ad;">
+                                        <i class="fas fa-file-pdf"></i> Generar Todos los QR
+                                    </button>
+                                </div>
+                                <div class="qr-preview">
+                                    <div id="qrPreviewContainer">
+                                        <img id="qrImage" src="" alt="Código QR" style="display: none;">
+                                        <div id="qrPlaceholder">
+                                            <i class="fas fa-qrcode"></i>
+                                            <p>Genera un código QR para tu mesa</p>
+                                        </div>
+                                    </div>
+                                    <div id="qrInfo" style="display: none;">
+                                        <p><strong>Mesa:</strong> <span id="qrInfoTable">-</span></p>
+                                        <p><strong>URL:</strong> <span id="qrInfoUrl">-</span></p>
+                                        <p><strong>Estado:</strong> <span id="qrInfoStatus" style="color: #27ae60;">✅ Listo para usar</span></p>
                                     </div>
                                 </div>
-                                <div id="qrInfo" style="display: none;">
-                                    <p><strong>Mesa:</strong> <span id="qrInfoTable">-</span></p>
-                                    <p><strong>URL:</strong> <span id="qrInfoUrl">-</span></p>
-                                    <p><strong>Estado:</strong> <span id="qrInfoStatus" style="color: #27ae60;">✅ Listo para usar</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Menú -->
+                    <div id="tabMenu" class="tab-content">
+                        <div class="orders-section">
+                            <div class="header">
+                                <h3><i class="fas fa-utensils"></i> Gestión del Menú</h3>
+                                <button class="btn-primary" id="addItemBtn">
+                                    <i class="fas fa-plus"></i> Nuevo Plato
+                                </button>
+                            </div>
+                            <div id="itemsList">
+                                <div class="empty-state">
+                                    <i class="fas fa-utensils"></i>
+                                    <p>No hay platos en el menú</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Tab: Menú (simplificado) -->
-                <div id="tabMenu" class="tab-content">
-                    <div class="orders-section">
-                        <div class="header">
-                            <h3><i class="fas fa-utensils"></i> Gestión del Menú</h3>
-                            <button class="btn-primary" id="addItemBtn" style="width: auto;">
-                                <i class="fas fa-plus"></i> Nuevo Plato
-                            </button>
-                        </div>
-                        <div id="itemsList">
-                            <div class="empty-state">
-                                <i class="fas fa-utensils"></i>
-                                <p>No hay platos en el menú</p>
+                    <!-- Tab: Secciones -->
+                    <div id="tabSections" class="tab-content">
+                        <div class="orders-section">
+                            <div class="header">
+                                <h3><i class="fas fa-tags"></i> Gestión de Secciones</h3>
+                                <button class="btn-primary" id="addSectionBtn">
+                                    <i class="fas fa-plus"></i> Nueva Sección
+                                </button>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab: Secciones (simplificado) -->
-                <div id="tabSections" class="tab-content">
-                    <div class="orders-section">
-                        <div class="header">
-                            <h3><i class="fas fa-tags"></i> Gestión de Secciones</h3>
-                            <button class="btn-primary" id="addSectionBtn" style="width: auto;">
-                                <i class="fas fa-plus"></i> Nueva Sección
-                            </button>
-                        </div>
-                        <div id="sectionsList">
-                            <div class="empty-state">
-                                <i class="fas fa-tags"></i>
-                                <p>No hay secciones</p>
+                            <div id="sectionsList">
+                                <div class="empty-state">
+                                    <i class="fas fa-tags"></i>
+                                    <p>No hay secciones</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -936,7 +220,7 @@
             </div>
         </div>
 
-        <!-- ===== MODALES ===== -->
+        <!-- Modales -->
         <div class="modal-overlay" id="orderModal">
             <div class="modal-content" style="max-width: 650px;">
                 <button class="modal-close" id="closeModal">&times;</button>
