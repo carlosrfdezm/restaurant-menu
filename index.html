@@ -14,7 +14,6 @@
             <div class="header-content">
                 <h1>🍽️ Carta Digital</h1>
                 <div class="header-actions">
-                    <!-- Botón de seguimiento -->
                     <button id="trackingBtn" style="display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--secondary); padding: 0.3rem 0.6rem; border-radius: 8px; background: #f0f0f0; position: relative;" title="Seguir mi pedido">
                         <i class="fas fa-truck"></i>
                         <span class="badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; border-radius: 50%; padding: 0.1rem 0.4rem; font-size: 0.6rem; font-weight: bold;">1</span>
@@ -29,7 +28,25 @@
                     </div>
                 </div>
             </div>
-            <div class="table-selector">
+            
+            <!-- Selector de tipo de pedido -->
+            <div class="order-type-selector" id="orderTypeSelector">
+                <button class="order-type-btn active" data-type="dine_in">
+                    <i class="fas fa-chair"></i>
+                    <span>En Mesa</span>
+                </button>
+                <button class="order-type-btn" data-type="delivery">
+                    <i class="fas fa-motorcycle"></i>
+                    <span>Delivery</span>
+                </button>
+                <button class="order-type-btn" data-type="takeaway">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>Para Llevar</span>
+                </button>
+            </div>
+            
+            <!-- Selector de mesa (solo para dine_in) -->
+            <div class="table-selector" id="tableSelector">
                 <label for="tableNumber">Mesa:</label>
                 <input type="number" id="tableNumber" placeholder="N°" min="1" max="99" required>
             </div>
@@ -60,17 +77,88 @@
                 <h2><i class="fas fa-shopping-cart"></i> Tu Pedido</h2>
                 <button class="close-cart" id="closeCart">&times;</button>
             </div>
+            
+            <!-- Info del tipo de pedido -->
+            <div class="cart-order-type" id="cartOrderType">
+                <i class="fas fa-chair"></i> En Mesa
+            </div>
+            
             <div class="cart-items" id="cartItems">
                 <div style="text-align: center; padding: 2rem; color: #999;">
                     <i class="fas fa-shopping-basket" style="font-size: 2rem; margin-bottom: 1rem;"></i>
                     <p>Tu carrito está vacío</p>
                 </div>
             </div>
+            
+            <!-- Formulario de delivery (oculto por defecto) -->
+            <div class="delivery-form" id="deliveryForm" style="display: none;">
+                <h3><i class="fas fa-motorcycle"></i> Datos de Delivery</h3>
+                <div class="form-group">
+                    <label>Nombre completo *</label>
+                    <input type="text" id="customerName" placeholder="Tu nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono *</label>
+                    <input type="tel" id="customerPhone" placeholder="+56 9 1234 5678" required>
+                </div>
+                <div class="form-group">
+                    <label>Dirección *</label>
+                    <input type="text" id="customerAddress" placeholder="Calle, número, depto" required>
+                </div>
+                <div class="form-group">
+                    <label>Referencia</label>
+                    <input type="text" id="customerReference" placeholder="Ej: Casa azul, portón negro">
+                </div>
+                <div class="form-group">
+                    <label>Notas adicionales</label>
+                    <textarea id="orderNotes" rows="2" placeholder="Sin cebolla, salsa aparte, etc."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Método de pago</label>
+                    <select id="paymentMethod">
+                        <option value="cash">Efectivo</option>
+                        <option value="card">Tarjeta (al recibir)</option>
+                        <option value="transfer">Transferencia</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Formulario de takeaway (oculto por defecto) -->
+            <div class="takeaway-form" id="takeawayForm" style="display: none;">
+                <h3><i class="fas fa-shopping-bag"></i> Datos para Llevar</h3>
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="takeawayName" placeholder="Tu nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="takeawayPhone" placeholder="+56 9 1234 5678">
+                </div>
+                <div class="form-group">
+                    <label>Notas adicionales</label>
+                    <textarea id="takeawayNotes" rows="2" placeholder="Sin cebolla, salsa aparte, etc."></textarea>
+                </div>
+            </div>
+            
             <div class="cart-summary">
+                <!-- Subtotal -->
+                <div class="cart-subtotal" id="cartSubtotalRow" style="display: none;">
+                    <span>Subtotal:</span>
+                    <span id="cartSubtotal">$0.00</span>
+                </div>
+                
+                <!-- Costo de envío -->
+                <div class="cart-delivery-fee" id="cartDeliveryFeeRow" style="display: none;">
+                    <span><i class="fas fa-motorcycle"></i> Envío:</span>
+                    <span id="cartDeliveryFee">$0.00</span>
+                </div>
+                
+                <!-- Total -->
                 <div class="cart-total">
                     <span>Total:</span>
                     <span id="cartTotal">$0.00</span>
                 </div>
+                
                 <button class="btn-primary btn-place-order" id="placeOrder">
                     <i class="fas fa-check"></i> Realizar Pedido
                 </button>
@@ -110,11 +198,12 @@
                     <div class="status-line"></div>
                     <div class="status-step" id="stepDelivered">
                         <i class="fas fa-flag-checkered"></i>
-                        <span>Entregado</span>
+                        <span id="stepDeliveredLabel">Entregado</span>
                     </div>
                 </div>
                 <div class="tracking-info">
                     <p><strong>Pedido #<span id="trackingOrderId">-</span></strong></p>
+                    <p><strong>Tipo:</strong> <span id="trackingOrderType">-</span></p>
                     <p><strong>Mesa:</strong> <span id="trackingTable">-</span></p>
                     <p><strong>Total:</strong> <span id="trackingTotal">-</span></p>
                     <p><strong>Estado:</strong> <span id="trackingStatus" class="status-pending">Pendiente</span></p>

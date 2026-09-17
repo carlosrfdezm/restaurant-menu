@@ -4,45 +4,30 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
-// Crear cliente con opciones mejoradas
 export const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true
-    },
-    db: {
-        schema: 'public'
     }
 })
 
-// Helper para manejar errores
-const handleError = (error) => {
-    console.error('Supabase Error:', error)
-    return {
-        success: false,
-        error: error.message || 'Error desconocido',
-        code: error.code || 'unknown'
-    }
-}
+const handleError = (error) => ({
+    success: false,
+    error: error.message || 'Error desconocido',
+    code: error.code || 'unknown'
+})
 
-// Helper para respuestas exitosas
-const handleSuccess = (data) => {
-    return {
-        success: true,
-        data,
-        error: null
-    }
-}
+const handleSuccess = (data) => ({
+    success: true,
+    data,
+    error: null
+})
 
 // ===== AUTENTICACIÓN =====
 export const signIn = async (email, password) => {
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        })
-        
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) return handleError(error)
         return handleSuccess(data)
     } catch (error) {
@@ -77,7 +62,6 @@ export const getMenuSections = async () => {
             .from('menu_sections')
             .select('*')
             .order('position', { ascending: true })
-        
         if (error) return handleError(error)
         return handleSuccess(data)
     } catch (error) {
@@ -91,7 +75,6 @@ export const createSection = async (section) => {
             .from('menu_sections')
             .insert([section])
             .select()
-        
         if (error) return handleError(error)
         return handleSuccess(data)
     } catch (error) {
@@ -106,7 +89,6 @@ export const updateSection = async (id, updates) => {
             .update(updates)
             .eq('id', id)
             .select()
-        
         if (error) return handleError(error)
         return handleSuccess(data)
     } catch (error) {
@@ -120,7 +102,6 @@ export const deleteSection = async (id) => {
             .from('menu_sections')
             .delete()
             .eq('id', id)
-        
         if (error) return handleError(error)
         return handleSuccess(null)
     } catch (error) {
@@ -135,7 +116,6 @@ export const getMenuItems = async () => {
             .from('menu_items')
             .select('*')
             .order('position', { ascending: true })
-        
         if (error) return handleError(error)
         return handleSuccess(data)
     } catch (error) {
@@ -149,7 +129,6 @@ export const createItem = async (item) => {
             .from('menu_items')
             .insert([item])
             .select()
-        
         if (error) return handleError(error)
         return handleSuccess(data)
     } catch (error) {
@@ -164,7 +143,6 @@ export const updateItem = async (id, updates) => {
             .update(updates)
             .eq('id', id)
             .select()
-        
         if (error) return handleError(error)
         return handleSuccess(data)
     } catch (error) {
@@ -178,7 +156,6 @@ export const deleteItem = async (id) => {
             .from('menu_items')
             .delete()
             .eq('id', id)
-        
         if (error) return handleError(error)
         return handleSuccess(null)
     } catch (error) {
@@ -190,18 +167,23 @@ export const deleteItem = async (id) => {
 export const createOrder = async (order) => {
     try {
         if (!order.items || order.items.length === 0) {
-            return {
-                success: false,
-                error: 'El pedido debe tener al menos un item',
-                code: 'validation_error'
-            }
+            return { success: false, error: 'El pedido debe tener al menos un item' }
         }
 
         const orderData = {
             customer_name: order.customer_name || 'Cliente',
             items: order.items,
+            subtotal: order.subtotal || 0,
             total: Number(order.total.toFixed(2)),
-            table_number: Number(order.table_number) || 1,
+            delivery_fee: order.delivery_fee || 0,
+            order_type: order.order_type || 'dine_in',
+            table_number: order.table_number || null,
+            customer_phone: order.customer_phone || null,
+            customer_address: order.customer_address || null,
+            customer_reference: order.customer_reference || null,
+            notes: order.notes || null,
+            payment_method: order.payment_method || 'cash',
+            estimated_time: order.estimated_time || 30,
             status: order.status || 'pending'
         }
 
@@ -231,7 +213,20 @@ export const getOrders = async () => {
             .from('orders')
             .select('*')
             .order('created_at', { ascending: false })
-        
+        if (error) return handleError(error)
+        return handleSuccess(data)
+    } catch (error) {
+        return handleError(error)
+    }
+}
+
+export const getOrdersByType = async (type) => {
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('order_type', type)
+            .order('created_at', { ascending: false })
         if (error) return handleError(error)
         return handleSuccess(data)
     } catch (error) {
@@ -246,7 +241,6 @@ export const updateOrderStatus = async (id, status) => {
             .update({ status })
             .eq('id', id)
             .select()
-        
         if (error) return handleError(error)
         return handleSuccess(data)
     } catch (error) {
@@ -254,16 +248,49 @@ export const updateOrderStatus = async (id, status) => {
     }
 }
 
-// ===== ELIMINAR PEDIDO (SOLO UNA VEZ) =====
 export const deleteOrder = async (id) => {
     try {
         const { error } = await supabase
             .from('orders')
             .delete()
             .eq('id', id)
-        
         if (error) return handleError(error)
         return handleSuccess(null)
+    } catch (error) {
+        return handleError(error)
+    }
+}
+
+// ===== CONFIGURACIÓN DEL RESTAURANTE =====
+export const getRestaurantSettings = async () => {
+    try {
+        const { data, error } = await supabase
+            .from('restaurant_settings')
+            .select('*')
+        if (error) return handleError(error)
+        
+        const settings = {}
+        data.forEach(item => {
+            settings[item.setting_key] = item.setting_value
+        })
+        return handleSuccess(settings)
+    } catch (error) {
+        return handleError(error)
+    }
+}
+
+export const updateRestaurantSetting = async (key, value) => {
+    try {
+        const { data, error } = await supabase
+            .from('restaurant_settings')
+            .upsert({ 
+                setting_key: key, 
+                setting_value: value,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'setting_key' })
+            .select()
+        if (error) return handleError(error)
+        return handleSuccess(data)
     } catch (error) {
         return handleError(error)
     }

@@ -2,7 +2,8 @@ import {
     supabase,
     getMenuSections, 
     getMenuItems, 
-    createOrder 
+    createOrder,
+    getRestaurantSettings
 } from './supabase.js'
 
 // ===== ESTADO GLOBAL =====
@@ -12,7 +13,16 @@ const state = {
     cart: [],
     currentSection: null,
     isLoading: true,
-    error: null
+    error: null,
+    orderType: 'dine_in',
+    settings: {
+        delivery_fee: 3.50,
+        delivery_min_order: 15.00,
+        delivery_estimated_time: 30,
+        delivery_enabled: true,
+        takeaway_enabled: true,
+        dine_in_enabled: true
+    }
 }
 
 // ===== DOM ELEMENTS =====
@@ -28,7 +38,8 @@ const elements = {
     cartBadge: document.getElementById('cartBadge'),
     placeOrderBtn: document.getElementById('placeOrder'),
     tableNumber: document.getElementById('tableNumber'),
-    trackingBtn: document.getElementById('trackingBtn')
+    trackingBtn: document.getElementById('trackingBtn'),
+    tableSelector: document.getElementById('tableSelector')
 }
 
 // ===== UTILIDADES =====
@@ -97,6 +108,31 @@ const showNotification = (message, type = 'success') => {
 }
 
 // ============================================
+// CARGAR CONFIGURACIÓN DEL RESTAURANTE
+// ============================================
+
+const loadRestaurantSettings = async () => {
+    try {
+        const result = await getRestaurantSettings()
+        if (result.success && result.data) {
+            state.settings = {
+                ...state.settings,
+                ...result.data,
+                delivery_fee: parseFloat(result.data.delivery_fee) || 3.50,
+                delivery_min_order: parseFloat(result.data.delivery_min_order) || 15.00,
+                delivery_estimated_time: parseInt(result.data.delivery_estimated_time) || 30,
+                delivery_enabled: result.data.delivery_enabled === 'true',
+                takeaway_enabled: result.data.takeaway_enabled === 'true',
+                dine_in_enabled: result.data.dine_in_enabled === 'true'
+            }
+            console.log('✅ Configuración cargada:', state.settings)
+        }
+    } catch (error) {
+        console.error('Error cargando configuración:', error)
+    }
+}
+
+// ============================================
 // CARGA DE DATOS
 // ============================================
 
@@ -104,6 +140,9 @@ const loadData = async () => {
     try {
         state.isLoading = true
         showMessage('Cargando menú...', 'info')
+
+        // Cargar configuración
+        await loadRestaurantSettings()
 
         const sectionsResult = await getMenuSections()
         if (!sectionsResult.success) {
@@ -134,6 +173,7 @@ const loadData = async () => {
         state.isLoading = false
         
         initQRDetection()
+        initOrderTypeSelector()
         checkInitialTracking()
         
     } catch (error) {
@@ -141,6 +181,80 @@ const loadData = async () => {
         showMessage(`Error al cargar el menú: ${error.message}`, 'error')
         state.isLoading = false
     }
+}
+
+// ============================================
+// SELECTOR DE TIPO DE PEDIDO
+// ============================================
+
+const initOrderTypeSelector = () => {
+    // Cargar preferencia guardada
+    const savedType = localStorage.getItem('orderType')
+    if (savedType && ['dine_in', 'delivery', 'takeaway'].includes(savedType)) {
+        // Verificar que esté habilitado
+        if (state.settings[`${savedType}_enabled`]) {
+            changeOrderType(savedType)
+        }
+    }
+
+    // Event listeners
+    document.querySelectorAll('.order-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            changeOrderType(btn.dataset.type)
+        })
+    })
+}
+
+const changeOrderType = (type) => {
+    state.orderType = type
+    
+    // Actualizar botones activos
+    document.querySelectorAll('.order-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === type)
+    })
+    
+    // Actualizar atributo del body
+    document.body.setAttribute('data-order-type', type)
+    
+    // Actualizar texto del carrito
+    const cartOrderType = document.getElementById('cartOrderType')
+    if (cartOrderType) {
+        const icons = {
+            'dine_in': 'fa-chair',
+            'delivery': 'fa-motorcycle',
+            'takeaway': 'fa-shopping-bag'
+        }
+        const labels = {
+            'dine_in': 'En Mesa',
+            'delivery': 'Delivery a Domicilio',
+            'takeaway': 'Para Llevar'
+        }
+        cartOrderType.innerHTML = `<i class="fas ${icons[type]}"></i> ${labels[type]}`
+    }
+    
+    // Actualizar etiqueta del último paso
+    const stepDeliveredLabel = document.getElementById('stepDeliveredLabel')
+    if (stepDeliveredLabel) {
+        const labels = {
+            'dine_in': 'Entregado',
+            'delivery': 'En Camino',
+            'takeaway': 'Retirado'
+        }
+        stepDeliveredLabel.textContent = labels[type]
+    }
+    
+    // Mostrar/ocultar selector de mesa
+    if (elements.tableSelector) {
+        elements.tableSelector.style.display = type === 'dine_in' ? 'flex' : 'none'
+    }
+    
+    // Actualizar totales
+    updateCartUI()
+    
+    // Guardar preferencia
+    localStorage.setItem('orderType', type)
+    
+    console.log(`📋 Tipo de pedido: ${type}`)
 }
 
 // ============================================
@@ -275,12 +389,24 @@ const clearCart = () => {
 
 const updateCartUI = () => {
     const totalItems = state.cart.reduce((sum, item) => sum + item.quantity, 0)
-    const totalPrice = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
     
+    // Calcular costo de envío
+    let deliveryFee = 0
+    if (state.orderType === 'delivery') {
+        if (subtotal >= state.settings.delivery_min_order) {
+            deliveryFee = state.settings.delivery_fee
+        }
+    }
+    
+    const total = subtotal + deliveryFee
+    
+    // Actualizar badge
     if (elements.cartBadge) {
         elements.cartBadge.textContent = totalItems
     }
     
+    // Actualizar items
     if (elements.cartItems) {
         if (state.cart.length === 0) {
             elements.cartItems.innerHTML = `
@@ -289,25 +415,64 @@ const updateCartUI = () => {
                     <p>Tu carrito está vacío</p>
                 </div>
             `
-            elements.cartTotal.textContent = '$0.00'
-            return
+        } else {
+            elements.cartItems.innerHTML = state.cart.map(item => `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-price">$${Number(item.price).toFixed(2)}</div>
+                    </div>
+                    <div class="cart-item-controls">
+                        <button onclick="window.removeFromCart(${item.id})">-</button>
+                        <span class="cart-item-quantity">${item.quantity}</span>
+                        <button onclick="window.addToCart(${JSON.stringify(item).replace(/"/g, '&quot;')})">+</button>
+                    </div>
+                </div>
+            `).join('')
         }
-
-        elements.cartItems.innerHTML = state.cart.map(item => `
-            <div class="cart-item">
-                <div class="cart-item-info">
-                    <div class="cart-item-name">${item.name}</div>
-                    <div class="cart-item-price">$${Number(item.price).toFixed(2)}</div>
-                </div>
-                <div class="cart-item-controls">
-                    <button onclick="window.removeFromCart(${item.id})">-</button>
-                    <span class="cart-item-quantity">${item.quantity}</span>
-                    <button onclick="window.addToCart(${JSON.stringify(item).replace(/"/g, '&quot;')})">+</button>
-                </div>
-            </div>
-        `).join('')
-        
-        elements.cartTotal.textContent = `$${totalPrice.toFixed(2)}`
+    }
+    
+    // Mostrar/ocultar subtotal (solo delivery)
+    const subtotalRow = document.getElementById('cartSubtotalRow')
+    if (subtotalRow) {
+        subtotalRow.style.display = state.orderType === 'delivery' ? 'flex' : 'none'
+        const subtotalEl = document.getElementById('cartSubtotal')
+        if (subtotalEl) subtotalEl.textContent = `$${subtotal.toFixed(2)}`
+    }
+    
+    // Mostrar/ocultar costo de envío (solo delivery)
+    const deliveryRow = document.getElementById('cartDeliveryFeeRow')
+    if (deliveryRow) {
+        deliveryRow.style.display = state.orderType === 'delivery' ? 'flex' : 'none'
+        const deliveryEl = document.getElementById('cartDeliveryFee')
+        if (deliveryEl) deliveryEl.textContent = `$${deliveryFee.toFixed(2)}`
+    }
+    
+    // Actualizar total
+    if (elements.cartTotal) {
+        elements.cartTotal.textContent = `$${total.toFixed(2)}`
+    }
+    
+    // Mostrar/ocultar formularios según tipo
+    const deliveryForm = document.getElementById('deliveryForm')
+    const takeawayForm = document.getElementById('takeawayForm')
+    
+    if (deliveryForm) {
+        deliveryForm.style.display = state.orderType === 'delivery' ? 'block' : 'none'
+    }
+    if (takeawayForm) {
+        takeawayForm.style.display = state.orderType === 'takeaway' ? 'block' : 'none'
+    }
+    
+    // Validar mínimo para delivery
+    if (elements.placeOrderBtn && state.orderType === 'delivery') {
+        if (subtotal < state.settings.delivery_min_order && subtotal > 0) {
+            elements.placeOrderBtn.disabled = true
+            elements.placeOrderBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Mínimo $${state.settings.delivery_min_order.toFixed(2)}`
+        } else {
+            elements.placeOrderBtn.disabled = false
+            elements.placeOrderBtn.innerHTML = '<i class="fas fa-check"></i> Realizar Pedido'
+        }
     }
 }
 
@@ -325,6 +490,9 @@ const initQRDetection = () => {
     
     if (table) {
         document.getElementById('tableNumber').value = table;
+        
+        // Forzar tipo dine_in si viene de QR
+        changeOrderType('dine_in')
         
         const banner = document.getElementById('welcomeBanner');
         if (banner) {
@@ -358,12 +526,22 @@ const getStatusText = (status) => {
     return map[status] || status
 }
 
-const saveTrackingOrder = (orderId, table, total) => {
+const getOrderTypeText = (type) => {
+    const map = {
+        'dine_in': 'En Mesa',
+        'delivery': 'Delivery',
+        'takeaway': 'Para Llevar'
+    }
+    return map[type] || type
+}
+
+const saveTrackingOrder = (orderId, table, total, orderType) => {
     if (orderId) {
         const trackingData = {
             orderId: orderId,
             table: table,
             total: total,
+            orderType: orderType || 'dine_in',
             timestamp: Date.now()
         };
         localStorage.setItem('trackingOrder', JSON.stringify(trackingData));
@@ -393,6 +571,7 @@ const loadTrackingOrder = () => {
                     orderId: data.orderId, 
                     table: data.table, 
                     total: data.total,
+                    orderType: data.orderType,
                     fromUrl: false 
                 };
             } else {
@@ -418,7 +597,8 @@ const generateTicket = (order) => {
     if (!order) return;
     
     const date = new Date(order.created_at);
-    document.getElementById('trackingDate').textContent = date.toLocaleString();
+    const dateEl = document.getElementById('trackingDate');
+    if (dateEl) dateEl.textContent = date.toLocaleString();
     
     const itemsHTML = order.items.map(item => `
         <div class="ticket-item">
@@ -427,24 +607,63 @@ const generateTicket = (order) => {
         </div>
     `).join('');
     
+    // Info adicional según tipo
+    let extraInfo = '';
+    if (order.order_type === 'delivery') {
+        extraInfo = `
+            <div class="ticket-extra-info">
+                <p><strong>Cliente:</strong> ${order.customer_name || 'N/A'}</p>
+                <p><strong>Teléfono:</strong> ${order.customer_phone || 'N/A'}</p>
+                <p><strong>Dirección:</strong> ${order.customer_address || 'N/A'}</p>
+                ${order.customer_reference ? `<p><strong>Referencia:</strong> ${order.customer_reference}</p>` : ''}
+                ${order.notes ? `<p><strong>Notas:</strong> ${order.notes}</p>` : ''}
+            </div>
+        `;
+    } else if (order.order_type === 'takeaway') {
+        extraInfo = `
+            <div class="ticket-extra-info">
+                <p><strong>Cliente:</strong> ${order.customer_name || 'N/A'}</p>
+                ${order.customer_phone ? `<p><strong>Teléfono:</strong> ${order.customer_phone}</p>` : ''}
+                ${order.notes ? `<p><strong>Notas:</strong> ${order.notes}</p>` : ''}
+            </div>
+        `;
+    } else {
+        extraInfo = `
+            <div class="ticket-extra-info">
+                <p><strong>Mesa:</strong> ${order.table_number || 'N/A'}</p>
+            </div>
+        `;
+    }
+    
     const ticketHTML = `
         <div class="ticket-print-area" id="ticketPrintArea">
             <div class="ticket-content">
                 <div class="ticket-header">
                     <h3>🍽️ Carta Digital</h3>
                     <p>Pedido #${order.id}</p>
-                    <p>Mesa ${order.table_number || 'N/A'}</p>
+                    <p>${getOrderTypeText(order.order_type)}</p>
                     <p>${date.toLocaleString()}</p>
                 </div>
+                ${extraInfo}
                 <div class="ticket-items">
                     ${itemsHTML}
                 </div>
+                ${order.order_type === 'delivery' ? `
+                    <div class="ticket-subtotal">
+                        <span>Subtotal:</span>
+                        <span>$${Number(order.subtotal || 0).toFixed(2)}</span>
+                    </div>
+                    <div class="ticket-subtotal">
+                        <span>Envío:</span>
+                        <span>$${Number(order.delivery_fee || 0).toFixed(2)}</span>
+                    </div>
+                ` : ''}
                 <div class="ticket-total">
                     <span>TOTAL</span>
                     <span>$${Number(order.total).toFixed(2)}</span>
                 </div>
                 <div class="ticket-footer">
-                    <p>¡Gracias por tu visita!</p>
+                    <p>¡Gracias por tu preferencia!</p>
                     <p style="font-size: 0.7rem;">Estado: ${getStatusText(order.status)}</p>
                 </div>
             </div>
@@ -468,13 +687,11 @@ const downloadTicketAsText = () => {
     if (!ticketContent) return;
     
     const lines = [];
-    const elements2 = ticketContent.querySelectorAll('*');
-    elements2.forEach(el => {
-        if (el.textContent && el.textContent.trim()) {
+    const children = ticketContent.querySelectorAll('*');
+    children.forEach(el => {
+        if (el.children.length === 0 && el.textContent && el.textContent.trim()) {
             const text = el.textContent.trim();
-            if (text && !lines.includes(text)) {
-                lines.push(text);
-            }
+            if (text) lines.push(text);
         }
     });
     
@@ -487,13 +704,13 @@ const downloadTicketAsText = () => {
     a.click();
     URL.revokeObjectURL(url);
     
-    showNotification('✅ Ticket descargado como texto', 'success');
+    showNotification('✅ Ticket descargado', 'success');
 }
 
-const showTrackingPanel = async (orderId, table, total) => {
+const showTrackingPanel = async (orderId, table, total, orderType) => {
     currentOrderId = orderId;
     
-    saveTrackingOrder(orderId, table, total);
+    saveTrackingOrder(orderId, table, total, orderType);
     
     try {
         const { data, error } = await supabase
@@ -504,13 +721,27 @@ const showTrackingPanel = async (orderId, table, total) => {
         
         if (data) {
             generateTicket(data);
+            // Actualizar tipo de pedido
+            const typeEl = document.getElementById('trackingOrderType');
+            if (typeEl) typeEl.textContent = getOrderTypeText(data.order_type);
+            
+            // Actualizar etiqueta del último paso según tipo
+            const stepDeliveredLabel = document.getElementById('stepDeliveredLabel');
+            if (stepDeliveredLabel) {
+                const labels = {
+                    'dine_in': 'Entregado',
+                    'delivery': 'En Camino',
+                    'takeaway': 'Retirado'
+                };
+                stepDeliveredLabel.textContent = labels[data.order_type] || 'Entregado';
+            }
         }
     } catch (error) {
         console.error('Error obteniendo datos del pedido:', error);
     }
     
     document.getElementById('trackingOrderId').textContent = orderId;
-    document.getElementById('trackingTable').textContent = table;
+    document.getElementById('trackingTable').textContent = table || 'N/A';
     document.getElementById('trackingTotal').textContent = `$${Number(total).toFixed(2)}`;
     document.getElementById('orderTrackingPanel').style.display = 'block';
     document.getElementById('overlay').classList.add('active');
@@ -562,10 +793,13 @@ const updateTrackingStatus = (order) => {
         'delivered': '📦 Entregado'
     };
     
-    document.getElementById('trackingStatus').textContent = statusMap[status] || status;
-    document.getElementById('trackingStatus').className = `status-${status}`;
+    const statusEl = document.getElementById('trackingStatus');
+    if (statusEl) {
+        statusEl.textContent = statusMap[status] || status;
+        statusEl.className = `status-${status}`;
+    }
     
-    steps.forEach((step, index) => {
+    steps.forEach((step) => {
         const element = document.getElementById(`step${step.charAt(0).toUpperCase() + step.slice(1)}`);
         if (!element) return;
         
@@ -589,7 +823,13 @@ const updateTrackingStatus = (order) => {
             clearInterval(trackingInterval);
             trackingInterval = null;
         }
-        showNotification('🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.', 'success');
+        
+        const messages = {
+            'dine_in': '🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.',
+            'delivery': '🛵 ¡Tu pedido está en camino!',
+            'takeaway': '🎉 ¡Tu pedido está listo para retirar!'
+        };
+        showNotification(messages[order.order_type] || '🎉 ¡Pedido completado!', 'success');
     }
 }
 
@@ -655,7 +895,7 @@ const restoreTracking = async () => {
             return false;
         }
         
-        showTrackingPanel(data.id, data.table_number, data.total);
+        showTrackingPanel(data.id, data.table_number, data.total, data.order_type);
         showNotification('📱 Reanudando seguimiento del pedido #' + data.id, 'info');
         updateTrackingButton();
         return true;
@@ -671,7 +911,7 @@ const checkInitialTracking = () => {
     if (tracking) {
         updateTrackingButton();
         setTimeout(() => {
-            showNotification('📱 Tienes un pedido activo. Haz clic en el botón 🚚 para seguirlo.', 'info');
+            showNotification('📱 Tienes un pedido activo. Haz clic en 🚚 para seguirlo.', 'info');
         }, 2000);
     }
 }
@@ -690,14 +930,38 @@ document.getElementById('downloadTicketBtn')?.addEventListener('click', () => {
 });
 
 // ============================================
-// PEDIDOS
+// REALIZAR PEDIDO
 // ============================================
 
 const placeOrder = async () => {
-    if (!elements.tableNumber.value) {
-        showNotification('Por favor, ingresa el número de mesa', 'warning');
-        elements.tableNumber.focus();
-        return;
+    // Validaciones según tipo
+    if (state.orderType === 'dine_in') {
+        if (!elements.tableNumber.value) {
+            showNotification('Por favor, ingresa el número de mesa', 'warning');
+            elements.tableNumber.focus();
+            return;
+        }
+    } else if (state.orderType === 'delivery') {
+        const name = document.getElementById('customerName')?.value;
+        const phone = document.getElementById('customerPhone')?.value;
+        const address = document.getElementById('customerAddress')?.value;
+        
+        if (!name || !phone || !address) {
+            showNotification('Completa todos los campos obligatorios', 'warning');
+            return;
+        }
+        
+        const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        if (subtotal < state.settings.delivery_min_order) {
+            showNotification(`El mínimo para delivery es $${state.settings.delivery_min_order.toFixed(2)}`, 'warning');
+            return;
+        }
+    } else if (state.orderType === 'takeaway') {
+        const name = document.getElementById('takeawayName')?.value;
+        if (!name) {
+            showNotification('Ingresa tu nombre', 'warning');
+            return;
+        }
     }
 
     if (state.cart.length === 0) {
@@ -709,20 +973,47 @@ const placeOrder = async () => {
     elements.placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
     try {
-        const total = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         
+        let deliveryFee = 0;
+        if (state.orderType === 'delivery') {
+            deliveryFee = state.settings.delivery_fee;
+        }
+        
+        const total = subtotal + deliveryFee;
+        
+        // Datos base
         const order = {
-            customer_name: `Mesa ${elements.tableNumber.value}`,
+            customer_name: state.orderType === 'dine_in' 
+                ? `Mesa ${elements.tableNumber.value}`
+                : (document.getElementById('customerName')?.value || document.getElementById('takeawayName')?.value || 'Cliente'),
             items: state.cart.map(item => ({
                 id: item.id,
                 name: item.name,
                 price: Number(item.price),
                 quantity: item.quantity
             })),
+            subtotal: Number(subtotal.toFixed(2)),
             total: Number(total.toFixed(2)),
-            table_number: parseInt(elements.tableNumber.value),
+            delivery_fee: Number(deliveryFee.toFixed(2)),
+            order_type: state.orderType,
             status: 'pending'
         };
+        
+        // Datos específicos por tipo
+        if (state.orderType === 'dine_in') {
+            order.table_number = parseInt(elements.tableNumber.value);
+        } else if (state.orderType === 'delivery') {
+            order.customer_phone = document.getElementById('customerPhone')?.value || '';
+            order.customer_address = document.getElementById('customerAddress')?.value || '';
+            order.customer_reference = document.getElementById('customerReference')?.value || '';
+            order.notes = document.getElementById('orderNotes')?.value || '';
+            order.payment_method = document.getElementById('paymentMethod')?.value || 'cash';
+            order.estimated_time = state.settings.delivery_estimated_time;
+        } else if (state.orderType === 'takeaway') {
+            order.customer_phone = document.getElementById('takeawayPhone')?.value || '';
+            order.notes = document.getElementById('takeawayNotes')?.value || '';
+        }
 
         console.log('📦 Enviando pedido:', order);
         
@@ -740,11 +1031,22 @@ const placeOrder = async () => {
         await showTrackingPanel(
             orderData.id,
             orderData.table_number,
-            orderData.total
+            orderData.total,
+            orderData.order_type
         );
         
         clearCart();
         closeCartPanel();
+        
+        // Limpiar formularios
+        document.getElementById('customerName') && (document.getElementById('customerName').value = '');
+        document.getElementById('customerPhone') && (document.getElementById('customerPhone').value = '');
+        document.getElementById('customerAddress') && (document.getElementById('customerAddress').value = '');
+        document.getElementById('customerReference') && (document.getElementById('customerReference').value = '');
+        document.getElementById('orderNotes') && (document.getElementById('orderNotes').value = '');
+        document.getElementById('takeawayName') && (document.getElementById('takeawayName').value = '');
+        document.getElementById('takeawayPhone') && (document.getElementById('takeawayPhone').value = '');
+        document.getElementById('takeawayNotes') && (document.getElementById('takeawayNotes').value = '');
         
         setTimeout(() => {
             showNotification('📱 Puedes seguir el estado de tu pedido con el botón 🚚', 'info');
@@ -765,13 +1067,14 @@ const placeOrder = async () => {
 
 if (elements.cartIcon) {
     elements.cartIcon.addEventListener('click', () => {
-        if (!elements.tableNumber.value) {
+        if (state.orderType === 'dine_in' && !elements.tableNumber.value) {
             showNotification('Por favor, ingresa el número de mesa', 'warning');
             elements.tableNumber.focus();
             return;
         }
         elements.cartPanel.classList.add('open');
         elements.overlay.classList.add('active');
+        updateCartUI();
     })
 }
 
@@ -973,25 +1276,10 @@ styles.textContent = `
         border-radius: 20px;
     }
     
-    #trackingStatus.status-pending {
-        background: #f39c12;
-        color: white;
-    }
-    
-    #trackingStatus.status-preparing {
-        background: #3498db;
-        color: white;
-    }
-    
-    #trackingStatus.status-ready {
-        background: #27ae60;
-        color: white;
-    }
-    
-    #trackingStatus.status-delivered {
-        background: #95a5a6;
-        color: white;
-    }
+    #trackingStatus.status-pending { background: #f39c12; color: white; }
+    #trackingStatus.status-preparing { background: #3498db; color: white; }
+    #trackingStatus.status-ready { background: #27ae60; color: white; }
+    #trackingStatus.status-delivered { background: #95a5a6; color: white; }
     
     #trackingBtn {
         display: none;
@@ -1056,6 +1344,19 @@ styles.textContent = `
         color: #666;
     }
     
+    .ticket-extra-info {
+        background: #fff;
+        padding: 0.5rem;
+        border-radius: 4px;
+        margin-bottom: 0.8rem;
+        font-size: 0.85rem;
+        border-left: 3px solid #3498db;
+    }
+    
+    .ticket-extra-info p {
+        margin: 0.2rem 0;
+    }
+    
     .ticket-content .ticket-items {
         margin: 0.8rem 0;
     }
@@ -1066,6 +1367,14 @@ styles.textContent = `
         padding: 0.3rem 0;
         border-bottom: 1px dotted #ddd;
         font-size: 0.9rem;
+    }
+    
+    .ticket-subtotal {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.3rem 0;
+        font-size: 0.9rem;
+        color: #666;
     }
     
     .ticket-content .ticket-total {
@@ -1088,12 +1397,8 @@ styles.textContent = `
     }
     
     @media print {
-        body * {
-            visibility: hidden;
-        }
-        .ticket-print-area, .ticket-print-area * {
-            visibility: visible !important;
-        }
+        body * { visibility: hidden; }
+        .ticket-print-area, .ticket-print-area * { visibility: visible !important; }
         .ticket-print-area {
             position: fixed;
             left: 0;
@@ -1114,9 +1419,7 @@ styles.textContent = `
             box-shadow: none !important;
             border: none !important;
         }
-        #overlay {
-            display: none !important;
-        }
+        #overlay { display: none !important; }
     }
     
     @keyframes pulse {
