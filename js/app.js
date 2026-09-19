@@ -21,7 +21,18 @@ const state = {
         delivery_estimated_time: 30,
         delivery_enabled: true,
         takeaway_enabled: true,
-        dine_in_enabled: true
+        dine_in_enabled: true,
+        restaurant_name: 'Mi Restaurante',
+        restaurant_phone: '+56 9 1234 5678',
+        restaurant_address: 'Av. Principal 123, Ciudad',
+        restaurant_email: 'contacto@mirestaurante.com',
+        restaurant_whatsapp: '+56912345678',
+        restaurant_facebook: '',
+        restaurant_instagram: '',
+        restaurant_tiktok: '',
+        restaurant_hours_weekday: '12:00 - 23:00',
+        restaurant_hours_weekend: '12:00 - 00:00',
+        delivery_zone: 'Zona centro y alrededores'
     }
 }
 
@@ -121,15 +132,140 @@ const loadRestaurantSettings = async () => {
                 delivery_fee: parseFloat(result.data.delivery_fee) || 3.50,
                 delivery_min_order: parseFloat(result.data.delivery_min_order) || 15.00,
                 delivery_estimated_time: parseInt(result.data.delivery_estimated_time) || 30,
-                delivery_enabled: result.data.delivery_enabled === 'true',
-                takeaway_enabled: result.data.takeaway_enabled === 'true',
-                dine_in_enabled: result.data.dine_in_enabled === 'true'
+                delivery_enabled: result.data.delivery_enabled === 'true' || result.data.delivery_enabled === true,
+                takeaway_enabled: result.data.takeaway_enabled === 'true' || result.data.takeaway_enabled === true,
+                dine_in_enabled: result.data.dine_in_enabled === 'true' || result.data.dine_in_enabled === true
             }
             console.log('✅ Configuración cargada:', state.settings)
         }
     } catch (error) {
         console.error('Error cargando configuración:', error)
     }
+}
+
+// ============================================
+// CARGAR DATOS DEL FOOTER Y WHATSAPP
+// ============================================
+
+const loadFooterData = () => {
+    const settings = state.settings
+    
+    // Nombre del restaurante
+    const restaurantName = settings.restaurant_name || 'Mi Restaurante'
+    const nameEl = document.getElementById('footerRestaurantName')
+    if (nameEl) nameEl.textContent = restaurantName
+    
+    const copyEl = document.getElementById('footerCopyright')
+    if (copyEl) copyEl.textContent = restaurantName
+    
+    // Teléfono
+    const phone = settings.restaurant_phone || '+56 9 1234 5678'
+    const phoneEl = document.getElementById('footerPhone')
+    if (phoneEl) phoneEl.textContent = phone
+    
+    const phoneLink = document.getElementById('footerPhoneLink')
+    if (phoneLink) phoneLink.href = `tel:${phone.replace(/\s/g, '')}`
+    
+    // Dirección
+    const address = settings.restaurant_address || 'Av. Principal 123, Ciudad'
+    const addressEl = document.getElementById('footerAddress')
+    if (addressEl) addressEl.textContent = address
+    
+    // Email
+    const email = settings.restaurant_email || 'contacto@mirestaurante.com'
+    const emailEl = document.getElementById('footerEmail')
+    if (emailEl) emailEl.textContent = email
+    
+    const emailLink = document.getElementById('footerEmailLink')
+    if (emailLink) emailLink.href = `mailto:${email}`
+    
+    // WhatsApp
+    let whatsappNumber = settings.restaurant_whatsapp || phone.replace(/\D/g, '')
+    whatsappNumber = whatsappNumber.replace(/\D/g, '')
+    const whatsappMessage = encodeURIComponent(`Hola ${restaurantName}, necesito ayuda con mi pedido.`)
+    
+    // Botón flotante
+    const whatsappBtn = document.getElementById('whatsappBtn')
+    if (whatsappBtn) {
+        whatsappBtn.href = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`
+    }
+    
+    // Enlace del footer
+    const footerWhatsappLink = document.getElementById('footerWhatsappLink')
+    if (footerWhatsappLink) {
+        footerWhatsappLink.href = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`
+    }
+    
+    // Redes sociales
+    const fbLink = document.getElementById('footerFacebook')
+    if (fbLink) {
+        const fb = settings.restaurant_facebook
+        if (fb && fb.trim()) {
+            fbLink.href = fb
+            fbLink.style.display = 'flex'
+        } else {
+            fbLink.style.display = 'none'
+        }
+    }
+    
+    const igLink = document.getElementById('footerInstagram')
+    if (igLink) {
+        const ig = settings.restaurant_instagram
+        if (ig && ig.trim()) {
+            igLink.href = ig
+            igLink.style.display = 'flex'
+        } else {
+            igLink.style.display = 'none'
+        }
+    }
+    
+    const tkLink = document.getElementById('footerTiktok')
+    if (tkLink) {
+        const tk = settings.restaurant_tiktok
+        if (tk && tk.trim()) {
+            tkLink.href = tk
+            tkLink.style.display = 'flex'
+        } else {
+            tkLink.style.display = 'none'
+        }
+    }
+    
+    // WhatsApp del footer
+    const footerWa = document.getElementById('footerWhatsapp')
+    if (footerWa) {
+        footerWa.href = `https://wa.me/${whatsappNumber}`
+    }
+    
+    // Mapa
+    const mapLink = document.getElementById('footerMapLink')
+    if (mapLink) {
+        const encodedAddress = encodeURIComponent(address)
+        mapLink.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`
+    }
+    
+    // Horarios
+    const hoursWeekday = settings.restaurant_hours_weekday || '12:00 - 23:00'
+    const hoursWeekend = settings.restaurant_hours_weekend || '12:00 - 00:00'
+    
+    const hoursWeekdayEl = document.getElementById('footerHoursWeekday')
+    if (hoursWeekdayEl) hoursWeekdayEl.textContent = hoursWeekday
+    
+    const hoursWeekendEl = document.getElementById('footerHoursWeekend')
+    if (hoursWeekendEl) hoursWeekendEl.textContent = hoursWeekend
+    
+    // Info de delivery
+    const deliveryZone = settings.delivery_zone || 'Zona centro y alrededores'
+    const deliveryFee = parseFloat(settings.delivery_fee) || 3.50
+    
+    const deliveryInfoEl = document.getElementById('footerDeliveryInfo')
+    if (deliveryInfoEl) deliveryInfoEl.textContent = deliveryZone
+    
+    const deliveryFeeEl = document.getElementById('footerDeliveryFee')
+    if (deliveryFeeEl) deliveryFeeEl.textContent = `Desde $${deliveryFee.toFixed(2)}`
+    
+    // Año
+    const yearEl = document.getElementById('footerYear')
+    if (yearEl) yearEl.textContent = new Date().getFullYear()
 }
 
 // ============================================
@@ -142,6 +278,7 @@ const loadData = async () => {
         showMessage('Cargando menú...', 'info')
 
         await loadRestaurantSettings()
+        loadFooterData()
 
         const sectionsResult = await getMenuSections()
         if (!sectionsResult.success) {
@@ -460,26 +597,26 @@ window.removeFromCart = removeFromCart
 // ============================================
 
 const initQRDetection = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const table = urlParams.get('table');
-    const mode = urlParams.get('mode');
+    const urlParams = new URLSearchParams(window.location.search)
+    const table = urlParams.get('table')
+    const mode = urlParams.get('mode')
     
     if (table) {
-        document.getElementById('tableNumber').value = table;
+        document.getElementById('tableNumber').value = table
         changeOrderType('dine_in')
         
-        const banner = document.getElementById('welcomeBanner');
+        const banner = document.getElementById('welcomeBanner')
         if (banner) {
-            document.getElementById('welcomeTable').textContent = table;
-            banner.style.display = 'block';
+            document.getElementById('welcomeTable').textContent = table
+            banner.style.display = 'block'
         }
         
-        showNotification(`🍽️ Bienvenido a la Mesa ${table}`, 'info');
+        showNotification(`🍽️ Bienvenido a la Mesa ${table}`, 'info')
     }
     
     if (mode === 'client') {
-        document.querySelector('.btn-admin-link')?.style.setProperty('display', 'none', 'important');
-        document.querySelector('.admin-access-hint')?.style.setProperty('display', 'none', 'important');
+        document.querySelector('.btn-admin-link')?.style.setProperty('display', 'none', 'important')
+        document.querySelector('.admin-access-hint')?.style.setProperty('display', 'none', 'important')
     }
 }
 
@@ -487,8 +624,8 @@ const initQRDetection = () => {
 // SEGUIMIENTO DE PEDIDOS
 // ============================================
 
-let trackingInterval = null;
-let currentOrderId = null;
+let trackingInterval = null
+let currentOrderId = null
 
 const getStatusText = (status) => {
     const map = {
@@ -517,29 +654,29 @@ const saveTrackingOrder = (orderId, table, total, orderType) => {
             total: total,
             orderType: orderType || 'dine_in',
             timestamp: Date.now()
-        };
-        localStorage.setItem('trackingOrder', JSON.stringify(trackingData));
+        }
+        localStorage.setItem('trackingOrder', JSON.stringify(trackingData))
         
-        const url = new URL(window.location);
-        url.searchParams.set('tracking', orderId);
-        window.history.replaceState({}, '', url);
+        const url = new URL(window.location)
+        url.searchParams.set('tracking', orderId)
+        window.history.replaceState({}, '', url)
         
-        updateTrackingButton();
+        updateTrackingButton()
     }
 }
 
 const loadTrackingOrder = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const trackingId = urlParams.get('tracking');
+    const urlParams = new URLSearchParams(window.location.search)
+    const trackingId = urlParams.get('tracking')
     
     if (trackingId) {
-        return { orderId: parseInt(trackingId), fromUrl: true };
+        return { orderId: parseInt(trackingId), fromUrl: true }
     }
     
-    const saved = localStorage.getItem('trackingOrder');
+    const saved = localStorage.getItem('trackingOrder')
     if (saved) {
         try {
-            const data = JSON.parse(saved);
+            const data = JSON.parse(saved)
             if (Date.now() - data.timestamp < 86400000) {
                 return { 
                     orderId: data.orderId, 
@@ -547,41 +684,41 @@ const loadTrackingOrder = () => {
                     total: data.total,
                     orderType: data.orderType,
                     fromUrl: false 
-                };
+                }
             } else {
-                localStorage.removeItem('trackingOrder');
+                localStorage.removeItem('trackingOrder')
             }
         } catch (e) {
-            localStorage.removeItem('trackingOrder');
+            localStorage.removeItem('trackingOrder')
         }
     }
     
-    return null;
+    return null
 }
 
 const clearTracking = () => {
-    localStorage.removeItem('trackingOrder');
-    const url = new URL(window.location);
-    url.searchParams.delete('tracking');
-    window.history.replaceState({}, '', url);
-    updateTrackingButton();
+    localStorage.removeItem('trackingOrder')
+    const url = new URL(window.location)
+    url.searchParams.delete('tracking')
+    window.history.replaceState({}, '', url)
+    updateTrackingButton()
 }
 
 const generateTicket = (order) => {
-    if (!order) return;
+    if (!order) return
     
-    const date = new Date(order.created_at);
-    const dateEl = document.getElementById('trackingDate');
-    if (dateEl) dateEl.textContent = date.toLocaleString();
+    const date = new Date(order.created_at)
+    const dateEl = document.getElementById('trackingDate')
+    if (dateEl) dateEl.textContent = date.toLocaleString()
     
     const itemsHTML = order.items.map(item => `
         <div class="ticket-item">
             <span>${item.quantity}x ${item.name}</span>
             <span>$${(item.price * item.quantity).toFixed(2)}</span>
         </div>
-    `).join('');
+    `).join('')
     
-    let extraInfo = '';
+    let extraInfo = ''
     if (order.order_type === 'delivery') {
         extraInfo = `
             <div class="ticket-extra-info">
@@ -591,7 +728,7 @@ const generateTicket = (order) => {
                 ${order.customer_reference ? `<p><strong>Referencia:</strong> ${order.customer_reference}</p>` : ''}
                 ${order.notes ? `<p><strong>Notas:</strong> ${order.notes}</p>` : ''}
             </div>
-        `;
+        `
     } else if (order.order_type === 'takeaway') {
         extraInfo = `
             <div class="ticket-extra-info">
@@ -599,24 +736,24 @@ const generateTicket = (order) => {
                 ${order.customer_phone ? `<p><strong>Teléfono:</strong> ${order.customer_phone}</p>` : ''}
                 ${order.notes ? `<p><strong>Notas:</strong> ${order.notes}</p>` : ''}
             </div>
-        `;
+        `
     } else {
         extraInfo = `
             <div class="ticket-extra-info">
                 <p><strong>Mesa:</strong> ${order.table_number || 'N/A'}</p>
             </div>
-        `;
+        `
     }
     
     const paymentBadge = order.payment_status === 'paid' 
         ? '<div style="background: #27ae60; color: white; padding: 0.3rem; text-align: center; border-radius: 4px; margin: 0.5rem 0; font-weight: bold; font-size: 0.85rem;">✅ PAGADO</div>'
-        : '<div style="background: #f39c12; color: white; padding: 0.3rem; text-align: center; border-radius: 4px; margin: 0.5rem 0; font-weight: bold; font-size: 0.85rem;">💰 PENDIENTE DE PAGO</div>';
+        : '<div style="background: #f39c12; color: white; padding: 0.3rem; text-align: center; border-radius: 4px; margin: 0.5rem 0; font-weight: bold; font-size: 0.85rem;">💰 PENDIENTE DE PAGO</div>'
     
     const ticketHTML = `
         <div class="ticket-print-area" id="ticketPrintArea">
             <div class="ticket-content">
                 <div class="ticket-header">
-                    <h3>🍽️ Carta Digital</h3>
+                    <h3>🍽️ ${state.settings.restaurant_name || 'Carta Digital'}</h3>
                     <p>Pedido #${order.id}</p>
                     <p>${getOrderTypeText(order.order_type)}</p>
                     <p>${date.toLocaleString()}</p>
@@ -646,122 +783,122 @@ const generateTicket = (order) => {
                 </div>
             </div>
         </div>
-    `;
+    `
     
-    const trackingItems = document.getElementById('trackingItems');
+    const trackingItems = document.getElementById('trackingItems')
     if (trackingItems) {
-        trackingItems.innerHTML = ticketHTML;
+        trackingItems.innerHTML = ticketHTML
     }
 }
 
 const downloadTicketAsText = () => {
-    const orderId = document.getElementById('trackingOrderId').textContent;
+    const orderId = document.getElementById('trackingOrderId').textContent
     if (orderId === '-') {
-        showNotification('No hay pedido activo', 'warning');
-        return;
+        showNotification('No hay pedido activo', 'warning')
+        return
     }
     
-    const ticketContent = document.querySelector('.ticket-content');
-    if (!ticketContent) return;
+    const ticketContent = document.querySelector('.ticket-content')
+    if (!ticketContent) return
     
-    const lines = [];
-    const children = ticketContent.querySelectorAll('*');
+    const lines = []
+    const children = ticketContent.querySelectorAll('*')
     children.forEach(el => {
         if (el.children.length === 0 && el.textContent && el.textContent.trim()) {
-            const text = el.textContent.trim();
-            if (text) lines.push(text);
+            const text = el.textContent.trim()
+            if (text) lines.push(text)
         }
-    });
+    })
     
-    const textContent = lines.join('\n');
-    const blob = new Blob([textContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ticket-pedido-${orderId}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const textContent = lines.join('\n')
+    const blob = new Blob([textContent], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `ticket-pedido-${orderId}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
     
-    showNotification('✅ Ticket descargado', 'success');
+    showNotification('✅ Ticket descargado', 'success')
 }
 
 const showTrackingPanel = async (orderId, table, total, orderType) => {
-    currentOrderId = orderId;
+    currentOrderId = orderId
     
-    saveTrackingOrder(orderId, table, total, orderType);
+    saveTrackingOrder(orderId, table, total, orderType)
     
     try {
         const { data, error } = await supabase
             .from('orders')
             .select('*')
             .eq('id', orderId)
-            .single();
+            .single()
         
         if (data) {
-            generateTicket(data);
-            const typeEl = document.getElementById('trackingOrderType');
-            if (typeEl) typeEl.textContent = getOrderTypeText(data.order_type);
+            generateTicket(data)
+            const typeEl = document.getElementById('trackingOrderType')
+            if (typeEl) typeEl.textContent = getOrderTypeText(data.order_type)
             
-            const stepDeliveredLabel = document.getElementById('stepDeliveredLabel');
+            const stepDeliveredLabel = document.getElementById('stepDeliveredLabel')
             if (stepDeliveredLabel) {
                 const labels = {
                     'dine_in': 'Entregado',
                     'delivery': 'En Camino',
                     'takeaway': 'Retirado'
-                };
-                stepDeliveredLabel.textContent = labels[data.order_type] || 'Entregado';
+                }
+                stepDeliveredLabel.textContent = labels[data.order_type] || 'Entregado'
             }
         }
     } catch (error) {
-        console.error('Error obteniendo datos del pedido:', error);
+        console.error('Error obteniendo datos del pedido:', error)
     }
     
-    document.getElementById('trackingOrderId').textContent = orderId;
-    document.getElementById('trackingTable').textContent = table || 'N/A';
-    document.getElementById('trackingTotal').textContent = `$${Number(total).toFixed(2)}`;
-    document.getElementById('orderTrackingPanel').style.display = 'block';
-    document.getElementById('overlay').classList.add('active');
+    document.getElementById('trackingOrderId').textContent = orderId
+    document.getElementById('trackingTable').textContent = table || 'N/A'
+    document.getElementById('trackingTotal').textContent = `$${Number(total).toFixed(2)}`
+    document.getElementById('orderTrackingPanel').style.display = 'block'
+    document.getElementById('overlay').classList.add('active')
     
-    if (trackingInterval) clearInterval(trackingInterval);
-    trackingInterval = setInterval(checkOrderStatus, 5000);
-    checkOrderStatus();
-    updateTrackingButton();
+    if (trackingInterval) clearInterval(trackingInterval)
+    trackingInterval = setInterval(checkOrderStatus, 5000)
+    checkOrderStatus()
+    updateTrackingButton()
 }
 
 document.getElementById('closeTracking')?.addEventListener('click', () => {
-    document.getElementById('orderTrackingPanel').style.display = 'none';
-    document.getElementById('overlay').classList.remove('active');
+    document.getElementById('orderTrackingPanel').style.display = 'none'
+    document.getElementById('overlay').classList.remove('active')
     if (trackingInterval) {
-        clearInterval(trackingInterval);
-        trackingInterval = null;
+        clearInterval(trackingInterval)
+        trackingInterval = null
     }
-    updateTrackingButton();
-});
+    updateTrackingButton()
+})
 
 const checkOrderStatus = async () => {
-    if (!currentOrderId) return;
+    if (!currentOrderId) return
     
     try {
         const { data, error } = await supabase
             .from('orders')
             .select('*')
             .eq('id', currentOrderId)
-            .single();
+            .single()
         
         if (error || !data) {
-            console.error('Error checking order status:', error);
-            return;
+            console.error('Error checking order status:', error)
+            return
         }
         
         // Si el pedido fue pagado, cerrar automáticamente
         if (data.payment_status === 'paid') {
-            handlePaidOrder(data);
-            return;
+            handlePaidOrder(data)
+            return
         }
         
-        updateTrackingStatus(data);
+        updateTrackingStatus(data)
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error:', error)
     }
 }
 
@@ -770,71 +907,102 @@ const checkOrderStatus = async () => {
 // ============================================
 
 const handlePaidOrder = (order) => {
-    console.log('💰 Pedido pagado:', order.id);
+    console.log('💰 Pedido pagado:', order.id)
     
     if (trackingInterval) {
-        clearInterval(trackingInterval);
-        trackingInterval = null;
+        clearInterval(trackingInterval)
+        trackingInterval = null
     }
     
-    const panel = document.getElementById('orderTrackingPanel');
-    if (panel) panel.style.display = 'none';
+    const panel = document.getElementById('orderTrackingPanel')
+    if (panel) panel.style.display = 'none'
     
-    const overlay = document.getElementById('overlay');
-    if (overlay) overlay.classList.remove('active');
+    const overlay = document.getElementById('overlay')
+    if (overlay) overlay.classList.remove('active')
     
-    clearTracking();
+    clearTracking()
     
-    showNotification('💳 ¡Gracias por tu pago! Tu pedido ha sido cerrado.', 'success');
+    showNotification('💳 ¡Gracias por tu pago! Tu pedido ha sido cerrado.', 'success')
     
     setTimeout(() => {
-        showNotification('👋 ¡Vuelve pronto!', 'info');
-    }, 2000);
+        showNotification('👋 ¡Vuelve pronto!', 'info')
+    }, 2000)
 }
 
 const updateTrackingStatus = (order) => {
-    const status = order.status;
-    const steps = ['pending', 'preparing', 'ready', 'delivered'];
+    const status = order.status
+    const steps = ['pending', 'preparing', 'ready', 'delivered']
     const statusMap = {
         'pending': '⏳ Pendiente',
         'preparing': '🔪 Preparando',
         'ready': '✅ Listo',
         'delivered': '📦 Entregado'
-    };
+    }
     
-    const statusEl = document.getElementById('trackingStatus');
+    const statusEl = document.getElementById('trackingStatus')
     if (statusEl) {
-        statusEl.textContent = statusMap[status] || status;
-        statusEl.className = `status-${status}`;
+        statusEl.textContent = statusMap[status] || status
+        statusEl.className = `status-${status}`
     }
     
     steps.forEach((step) => {
-        const element = document.getElementById(`step${step.charAt(0).toUpperCase() + step.slice(1)}`);
-        if (!element) return;
+        const element = document.getElementById(`step${step.charAt(0).toUpperCase() + step.slice(1)}`)
+        if (!element) return
         
-        const stepIndex = steps.indexOf(step);
-        const currentIndex = steps.indexOf(status);
+        const stepIndex = steps.indexOf(step)
+        const currentIndex = steps.indexOf(status)
         
-        element.classList.remove('active', 'completed');
+        element.classList.remove('active', 'completed')
         
         if (stepIndex < currentIndex) {
-            element.classList.add('completed');
+            element.classList.add('completed')
         } else if (stepIndex === currentIndex) {
-            element.classList.add('active');
+            element.classList.add('active')
         }
-    });
+    })
     
-    generateTicket(order);
+    generateTicket(order)
     
-    if (status === 'delivered' && !order._notifiedDelivered) {
-        order._notifiedDelivered = true;
+    // Si fue entregado y pagado, dejar de seguir
+    if (status === 'delivered' && order.payment_status === 'paid' && !order._notifiedDelivered) {
+        order._notifiedDelivered = true
+        
+        const messages = {
+            'dine_in': '🎉 ¡Tu pedido ha sido entregado!',
+            'delivery': '🛵 ¡Tu pedido fue entregado!',
+            'takeaway': '🎉 ¡Tu pedido fue retirado!'
+        }
+        showNotification(messages[order.order_type] || '🎉 ¡Pedido completado!', 'success')
+        
+        // Cerrar el panel después de 5 segundos
+        setTimeout(() => {
+            handlePaidOrder(order)
+        }, 5000)
+    }
+    // Si fue entregado (sin pago en línea), dejar de seguir después de 1 minuto
+    else if (status === 'delivered' && order.payment_status !== 'paid' && !order._notifiedDelivered) {
+        order._notifiedDelivered = true
         
         const messages = {
             'dine_in': '🎉 ¡Tu pedido ha sido entregado! Disfruta tu comida.',
-            'delivery': '🛵 ¡Tu pedido está en camino!',
-            'takeaway': '🎉 ¡Tu pedido está listo para retirar!'
-        };
-        showNotification(messages[order.order_type] || '🎉 ¡Pedido completado!', 'success');
+            'delivery': '🛵 ¡Tu pedido fue entregado!',
+            'takeaway': '🎉 ¡Tu pedido fue retirado!'
+        }
+        showNotification(messages[order.order_type] || '🎉 ¡Pedido completado!', 'success')
+        
+        // Dejar de seguir después de 1 minuto
+        setTimeout(() => {
+            if (trackingInterval) {
+                clearInterval(trackingInterval)
+                trackingInterval = null
+            }
+            const panel = document.getElementById('orderTrackingPanel')
+            if (panel) panel.style.display = 'none'
+            const overlay = document.getElementById('overlay')
+            if (overlay) overlay.classList.remove('active')
+            clearTracking()
+            showNotification('👋 ¡Vuelve pronto!', 'info')
+        }, 60000)
     }
 }
 
@@ -843,46 +1011,46 @@ const updateTrackingStatus = (order) => {
 // ============================================
 
 const updateTrackingButton = () => {
-    const tracking = loadTrackingOrder();
+    const tracking = loadTrackingOrder()
     if (elements.trackingBtn) {
         if (tracking) {
-            elements.trackingBtn.style.display = 'inline-block';
-            elements.trackingBtn.title = `Seguir pedido #${tracking.orderId}`;
-            const badge = elements.trackingBtn.querySelector('.badge');
+            elements.trackingBtn.style.display = 'inline-block'
+            elements.trackingBtn.title = `Seguir pedido #${tracking.orderId}`
+            const badge = elements.trackingBtn.querySelector('.badge')
             if (badge) {
-                badge.style.display = 'inline-block';
-                badge.textContent = '1';
+                badge.style.display = 'inline-block'
+                badge.textContent = '1'
             }
         } else {
-            elements.trackingBtn.style.display = 'none';
-            const badge = elements.trackingBtn.querySelector('.badge');
-            if (badge) badge.style.display = 'none';
+            elements.trackingBtn.style.display = 'none'
+            const badge = elements.trackingBtn.querySelector('.badge')
+            if (badge) badge.style.display = 'none'
         }
     }
 }
 
 if (elements.trackingBtn) {
     elements.trackingBtn.addEventListener('click', async () => {
-        const panel = document.getElementById('orderTrackingPanel');
+        const panel = document.getElementById('orderTrackingPanel')
         if (panel && panel.style.display === 'block') {
-            panel.style.display = 'none';
-            document.getElementById('overlay').classList.remove('active');
+            panel.style.display = 'none'
+            document.getElementById('overlay').classList.remove('active')
             if (trackingInterval) {
-                clearInterval(trackingInterval);
-                trackingInterval = null;
+                clearInterval(trackingInterval)
+                trackingInterval = null
             }
         } else {
-            await restoreTracking();
+            await restoreTracking()
         }
-    });
+    })
 }
 
 const restoreTracking = async () => {
-    const tracking = loadTrackingOrder();
+    const tracking = loadTrackingOrder()
     if (!tracking) {
-        showNotification('No hay pedido activo para seguir', 'warning');
-        updateTrackingButton();
-        return false;
+        showNotification('No hay pedido activo para seguir', 'warning')
+        updateTrackingButton()
+        return false
     }
     
     try {
@@ -890,38 +1058,38 @@ const restoreTracking = async () => {
             .from('orders')
             .select('*')
             .eq('id', tracking.orderId)
-            .single();
+            .single()
         
         if (error || !data) {
-            clearTracking();
-            showNotification('El pedido ya no está disponible', 'warning');
-            return false;
+            clearTracking()
+            showNotification('El pedido ya no está disponible', 'warning')
+            return false
         }
         
         if (data.payment_status === 'paid') {
-            clearTracking();
-            showNotification('Este pedido ya fue pagado y cerrado', 'info');
-            return false;
+            clearTracking()
+            showNotification('Este pedido ya fue pagado y cerrado', 'info')
+            return false
         }
         
-        showTrackingPanel(data.id, data.table_number, data.total, data.order_type);
-        showNotification('📱 Reanudando seguimiento del pedido #' + data.id, 'info');
-        updateTrackingButton();
-        return true;
+        showTrackingPanel(data.id, data.table_number, data.total, data.order_type)
+        showNotification('📱 Reanudando seguimiento del pedido #' + data.id, 'info')
+        updateTrackingButton()
+        return true
     } catch (error) {
-        console.error('Error:', error);
-        updateTrackingButton();
-        return false;
+        console.error('Error:', error)
+        updateTrackingButton()
+        return false
     }
 }
 
 const checkInitialTracking = () => {
-    const tracking = loadTrackingOrder();
+    const tracking = loadTrackingOrder()
     if (tracking) {
-        updateTrackingButton();
+        updateTrackingButton()
         setTimeout(() => {
-            showNotification('📱 Tienes un pedido activo. Haz clic en 🚚 para seguirlo.', 'info');
-        }, 2000);
+            showNotification('📱 Tienes un pedido activo. Haz clic en 🚚 para seguirlo.', 'info')
+        }, 2000)
     }
 }
 
@@ -930,13 +1098,13 @@ const checkInitialTracking = () => {
 // ============================================
 
 document.getElementById('downloadTicketBtn')?.addEventListener('click', () => {
-    const choice = confirm('¿Descargar ticket como texto? (Cancelar para imprimir)');
+    const choice = confirm('¿Descargar ticket como texto? (Cancelar para imprimir)')
     if (choice) {
-        downloadTicketAsText();
+        downloadTicketAsText()
     } else {
-        window.print();
+        window.print()
     }
-});
+})
 
 // ============================================
 // REALIZAR PEDIDO
@@ -945,50 +1113,50 @@ document.getElementById('downloadTicketBtn')?.addEventListener('click', () => {
 const placeOrder = async () => {
     if (state.orderType === 'dine_in') {
         if (!elements.tableNumber.value) {
-            showNotification('Por favor, ingresa el número de mesa', 'warning');
-            elements.tableNumber.focus();
-            return;
+            showNotification('Por favor, ingresa el número de mesa', 'warning')
+            elements.tableNumber.focus()
+            return
         }
     } else if (state.orderType === 'delivery') {
-        const name = document.getElementById('customerName')?.value;
-        const phone = document.getElementById('customerPhone')?.value;
-        const address = document.getElementById('customerAddress')?.value;
+        const name = document.getElementById('customerName')?.value
+        const phone = document.getElementById('customerPhone')?.value
+        const address = document.getElementById('customerAddress')?.value
         
         if (!name || !phone || !address) {
-            showNotification('Completa todos los campos obligatorios', 'warning');
-            return;
+            showNotification('Completa todos los campos obligatorios', 'warning')
+            return
         }
         
-        const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
         if (subtotal < state.settings.delivery_min_order) {
-            showNotification(`El mínimo para delivery es $${state.settings.delivery_min_order.toFixed(2)}`, 'warning');
-            return;
+            showNotification(`El mínimo para delivery es $${state.settings.delivery_min_order.toFixed(2)}`, 'warning')
+            return
         }
     } else if (state.orderType === 'takeaway') {
-        const name = document.getElementById('takeawayName')?.value;
+        const name = document.getElementById('takeawayName')?.value
         if (!name) {
-            showNotification('Ingresa tu nombre', 'warning');
-            return;
+            showNotification('Ingresa tu nombre', 'warning')
+            return
         }
     }
 
     if (state.cart.length === 0) {
-        showNotification('El carrito está vacío', 'warning');
-        return;
+        showNotification('El carrito está vacío', 'warning')
+        return
     }
 
-    elements.placeOrderBtn.disabled = true;
-    elements.placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    elements.placeOrderBtn.disabled = true
+    elements.placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...'
 
     try {
-        const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
         
-        let deliveryFee = 0;
+        let deliveryFee = 0
         if (state.orderType === 'delivery') {
-            deliveryFee = state.settings.delivery_fee;
+            deliveryFee = state.settings.delivery_fee
         }
         
-        const total = subtotal + deliveryFee;
+        const total = subtotal + deliveryFee
         
         const order = {
             customer_name: state.orderType === 'dine_in' 
@@ -1005,62 +1173,61 @@ const placeOrder = async () => {
             delivery_fee: Number(deliveryFee.toFixed(2)),
             order_type: state.orderType,
             status: 'pending'
-        };
+        }
         
         if (state.orderType === 'dine_in') {
-            order.table_number = parseInt(elements.tableNumber.value);
+            order.table_number = parseInt(elements.tableNumber.value)
         } else if (state.orderType === 'delivery') {
-            order.customer_phone = document.getElementById('customerPhone')?.value || '';
-            order.customer_address = document.getElementById('customerAddress')?.value || '';
-            order.customer_reference = document.getElementById('customerReference')?.value || '';
-            order.notes = document.getElementById('orderNotes')?.value || '';
-            order.payment_method = document.getElementById('paymentMethod')?.value || 'cash';
-            order.estimated_time = state.settings.delivery_estimated_time;
+            order.customer_phone = document.getElementById('customerPhone')?.value || ''
+            order.customer_address = document.getElementById('customerAddress')?.value || ''
+            order.customer_reference = document.getElementById('customerReference')?.value || ''
+            order.notes = document.getElementById('orderNotes')?.value || ''
+            order.payment_method = document.getElementById('paymentMethod')?.value || 'cash'
+            order.estimated_time = state.settings.delivery_estimated_time
         } else if (state.orderType === 'takeaway') {
-            order.customer_phone = document.getElementById('takeawayPhone')?.value || '';
-            order.notes = document.getElementById('takeawayNotes')?.value || '';
+            order.customer_phone = document.getElementById('takeawayPhone')?.value || ''
+            order.notes = document.getElementById('takeawayNotes')?.value || ''
         }
 
-        console.log('📦 Enviando pedido:', order);
+        console.log('📦 Enviando pedido:', order)
         
-        const result = await createOrder(order);
+        const result = await createOrder(order)
         
         if (!result.success) {
-            throw new Error(result.error);
+            throw new Error(result.error)
         }
         
-        console.log('✅ Pedido creado:', result.data);
+        console.log('✅ Pedido creado:', result.data)
         
-        const orderData = result.data[0];
-        showNotification('🎉 ¡Pedido realizado con éxito!', 'success');
+        const orderData = result.data[0]
+        showNotification('🎉 ¡Pedido realizado con éxito!', 'success')
         
         await showTrackingPanel(
             orderData.id,
             orderData.table_number,
             orderData.total,
             orderData.order_type
-        );
+        )
         
-        clearCart();
-        closeCartPanel();
+        clearCart()
+        closeCartPanel()
         
-        // Limpiar formularios
-        const fields = ['customerName', 'customerPhone', 'customerAddress', 'customerReference', 'orderNotes', 'takeawayName', 'takeawayPhone', 'takeawayNotes'];
+        const fields = ['customerName', 'customerPhone', 'customerAddress', 'customerReference', 'orderNotes', 'takeawayName', 'takeawayPhone', 'takeawayNotes']
         fields.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = '';
-        });
+            const el = document.getElementById(id)
+            if (el) el.value = ''
+        })
         
         setTimeout(() => {
-            showNotification('📱 Puedes seguir el estado de tu pedido con el botón 🚚', 'info');
-        }, 1000);
+            showNotification('📱 Puedes seguir el estado de tu pedido con el botón 🚚', 'info')
+        }, 1000)
         
     } catch (error) {
-        console.error('❌ Error:', error);
-        showNotification(`Error: ${error.message}`, 'error');
+        console.error('❌ Error:', error)
+        showNotification(`Error: ${error.message}`, 'error')
     } finally {
-        elements.placeOrderBtn.disabled = false;
-        elements.placeOrderBtn.innerHTML = '<i class="fas fa-check"></i> Realizar Pedido';
+        elements.placeOrderBtn.disabled = false
+        elements.placeOrderBtn.innerHTML = '<i class="fas fa-check"></i> Realizar Pedido'
     }
 }
 
@@ -1071,37 +1238,37 @@ const placeOrder = async () => {
 if (elements.cartIcon) {
     elements.cartIcon.addEventListener('click', () => {
         if (state.orderType === 'dine_in' && !elements.tableNumber.value) {
-            showNotification('Por favor, ingresa el número de mesa', 'warning');
-            elements.tableNumber.focus();
-            return;
+            showNotification('Por favor, ingresa el número de mesa', 'warning')
+            elements.tableNumber.focus()
+            return
         }
-        elements.cartPanel.classList.add('open');
-        elements.overlay.classList.add('active');
-        updateCartUI();
+        elements.cartPanel.classList.add('open')
+        elements.overlay.classList.add('active')
+        updateCartUI()
     })
 }
 
 const closeCartPanel = () => {
-    elements.cartPanel.classList.remove('open');
-    elements.overlay.classList.remove('active');
+    elements.cartPanel.classList.remove('open')
+    elements.overlay.classList.remove('active')
 }
 
 if (elements.closeCart) {
-    elements.closeCart.addEventListener('click', closeCartPanel);
+    elements.closeCart.addEventListener('click', closeCartPanel)
 }
 
 if (elements.overlay) {
-    elements.overlay.addEventListener('click', closeCartPanel);
+    elements.overlay.addEventListener('click', closeCartPanel)
 }
 
 if (elements.placeOrderBtn) {
-    elements.placeOrderBtn.addEventListener('click', placeOrder);
+    elements.placeOrderBtn.addEventListener('click', placeOrder)
 }
 
 if (elements.tableNumber) {
     elements.tableNumber.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            elements.cartIcon.click();
+            elements.cartIcon.click()
         }
     })
 }
